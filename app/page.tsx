@@ -1,15 +1,34 @@
 import { supabase } from '@/lib/supabaseClient'
 import CaptionGrid from './CaptionGrid'
+import Link from 'next/link'
 
-export default async function Home() {
-    const { data: captions, error } = await supabase
+const PAGE_SIZE = 5
+
+export default async function Home({
+                                       searchParams,
+                                   }: {
+    searchParams: Promise<{ page?: string }>
+}) {
+    const params = await searchParams
+    const currentPage = Math.max(1, parseInt(params.page || '1', 10))
+    const from = (currentPage - 1) * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
+
+    const {
+        data: captions,
+        error,
+        count,
+    } = await supabase
         .from('captions')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('votes', { ascending: false })
+        .range(from, to)
 
     if (error) {
         return <p style={{ padding: '2rem' }}>Error loading captions: {error.message}</p>
     }
+
+    const totalPages = count ? Math.ceil(count / PAGE_SIZE) : 1
 
     return (
         <main
@@ -28,6 +47,51 @@ export default async function Home() {
             </p>
 
             <CaptionGrid captions={captions || []} />
+
+            {/* Pagination controls */}
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    marginTop: '2.5rem',
+                }}
+            >
+                <Link
+                    href={`/?page=${currentPage - 1}`}
+                    aria-disabled={currentPage <= 1}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: currentPage <= 1 ? '#ccc' : '#111',
+                        pointerEvents: currentPage <= 1 ? 'none' : 'auto',
+                    }}
+                >
+                    ← Previous
+                </Link>
+
+                <span style={{ color: '#666', fontSize: '0.9rem' }}>
+          Page {currentPage} of {totalPages}
+        </span>
+
+                <Link
+                    href={`/?page=${currentPage + 1}`}
+                    aria-disabled={currentPage >= totalPages}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        textDecoration: 'none',
+                        color: currentPage >= totalPages ? '#ccc' : '#111',
+                        pointerEvents: currentPage >= totalPages ? 'none' : 'auto',
+                    }}
+                >
+                    Next →
+                </Link>
+            </div>
         </main>
     )
 }
