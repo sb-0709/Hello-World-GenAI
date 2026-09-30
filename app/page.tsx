@@ -1,24 +1,26 @@
-import { supabase } from '@/lib/supabaseClient'
+import { createClient } from '@/lib/supabase/server'
 import CaptionGrid from './CaptionGrid'
 import Link from 'next/link'
 
 const PAGE_SIZE = 5
 
-export default async function Home({
-                                       searchParams,
-                                   }: {
-    searchParams: Promise<{ page?: string }>
-}) {
-    const params = await searchParams
-    const currentPage = Math.max(1, parseInt(params.page || '1', 10))
-    const from = (currentPage - 1) * PAGE_SIZE
-    const to = from + PAGE_SIZE - 1
+    export default async function Home({
+                                           searchParams,
+                                       }: {
+        searchParams: Promise<{ page?: string }>
+    }) {
+        const supabase = await createClient()   // ← add this line
 
-    const {
-        data: captions,
-        error,
-        count,
-    } = await supabase
+        const params = await searchParams
+        const currentPage = Math.max(1, parseInt(params.page || '1', 10))
+        const from = (currentPage - 1) * PAGE_SIZE
+        const to = from + PAGE_SIZE - 1
+
+        const {
+            data: captions,
+            error,
+            count,
+        } = await supabase
         .from('captions')
         .select('*', { count: 'exact' })
         .order('votes', { ascending: false })
