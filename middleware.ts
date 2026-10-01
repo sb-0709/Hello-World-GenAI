@@ -46,7 +46,8 @@ export async function middleware(request: NextRequest) {
             .eq('id', user.id)
             .single()
 
-        if (profile && (!profile.first_name || !profile.last_name)) {
+        // No profile row at all, OR incomplete names → send to /profile
+        if (!profile || !profile.first_name || !profile.last_name) {
             const url = request.nextUrl.clone()
             url.pathname = '/profile'
             return NextResponse.redirect(url)

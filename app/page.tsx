@@ -9,7 +9,8 @@ const PAGE_SIZE = 5
                                        }: {
         searchParams: Promise<{ page?: string }>
     }) {
-        const supabase = await createClient()   // ← add this line
+        const supabase = await createClient()
+        const { data: { user } } = await supabase.auth.getUser()
 
         const params = await searchParams
         const currentPage = Math.max(1, parseInt(params.page || '1', 10))
@@ -45,10 +46,12 @@ const PAGE_SIZE = 5
                 Caption Rating App
             </h1>
             <p style={{ color: '#666', marginBottom: '2rem' }}>
-                Vote for your favorite captions below. Click an image to view it full size.
+                {user
+                    ? 'Vote for your favorite captions below. Click an image to view it full size.'
+                    : 'Browse captions below. Log in to upvote your favorites.'}
             </p>
 
-            <CaptionGrid captions={captions || []} />
+            <CaptionGrid captions={captions || []} isLoggedIn={!!user} />
 
             {/* Pagination controls */}
             <div
