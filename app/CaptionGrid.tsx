@@ -8,7 +8,8 @@ type Caption = {
     id: number
     text: string
     image_url: string | null
-    votes: number
+    score: number
+    userVote: 'up' | 'down' | null
 }
 
 export default function CaptionGrid({
@@ -21,21 +22,57 @@ export default function CaptionGrid({
     const supabase = createClient()
     const router = useRouter()
     const [expandedImage, setExpandedImage] = useState<string | null>(null)
-    const [localVotes, setLocalVotes] = useState<Record<number, number>>({})
-    const [votingId, setVotingId] = useState<number | null>(null)
+    const [pendingId, setPendingId] = useState<number | null>(null)
+    const [localState, setLocalState] = useState<Record<number, { score: number; userVote: 'up' | 'down' | null }>>({})
 
-    const handleUpvote = async (id: number, currentVotes: number) => {
-        setVotingId(id)
-        setLocalVotes((prev) => ({ ...prev, [id]: currentVotes + 1 }))
+    const getState = (caption: Caption) =>
+        localState[caption.id] ?? { score: caption.score, userVote: caption.userVote }
 
-        const { error } = await supabase.rpc('increment_votes', { caption_id_input: id })
-        setVotingId(null)
-
-        if (error) {
-            setLocalVotes((prev) => ({ ...prev, [id]: currentVotes }))
-        } else {
-            router.refresh()
+    const handleVote = async (caption: Caption, type: 'up' | 'down') => {
+        const {
+            data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) {
+            router.push('/login')
+            return
         }
+
+        const current = getState(caption)
+        setPendingId(caption.id)
+
+        let newVote: 'up' | 'down' | null
+        let scoreDelta = 0
+
+        if (current.userVote === type) {
+            // Clicking the same direction again removes the vote
+            newVote = null
+            scoreDelta = type === 'up' ? -1 : 1
+            await supabase.from('votes').delete().eq('caption_id', caption.id).eq('user_id', user.id)
+        } else if (current.userVote === null) {
+            // No existing vote — insert a new one
+            newVote = type
+            scoreDelta = type === 'up' ? 1 : -1
+            await supabase.from('votes').insert({
+                caption_id: caption.id,
+                user_id: user.id,
+                vote_type: type,
+            })
+        } else {
+            // Switching from the opposite direction — update, counts as a 2-point swing
+            newVote = type
+            scoreDelta = type === 'up' ? 2 : -2
+            await supabase
+                .from('votes')
+                .update({ vote_type: type })
+                .eq('caption_id', caption.id)
+                .eq('user_id', user.id)
+        }
+
+        setLocalState((prev) => ({
+            ...prev,
+            [caption.id]: { score: current.score + scoreDelta, userVote: newVote },
+        }))
+        setPendingId(null)
     }
 
     return (
@@ -48,7 +85,7 @@ export default function CaptionGrid({
                 }}
             >
                 {captions.map((caption) => {
-                    const votes = localVotes[caption.id] ?? caption.votes
+                    const state = getState(caption)
                     return (
                         <div
                             key={caption.id}
@@ -80,6 +117,7 @@ export default function CaptionGrid({
                                 <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.4, flex: 1 }}>
                                     {caption.text}
                                 </p>
+
                                 <div
                                     style={{
                                         display: 'flex',
@@ -88,31 +126,62 @@ export default function CaptionGrid({
                                         marginTop: '0.75rem',
                                     }}
                                 >
-                  <span style={{ color: '#888', fontSize: '0.85rem', fontWeight: 500 }}>
-                    🔥 {votes} votes
+                  <span
+                      style={{
+                          color: state.score > 0 ? '#16a34a' : state.score < 0 ? '#dc2626' : '#888',
+                          fontSize: '0.9rem',
+                          fontWeight: 700,
+                      }}
+                  >
+                    {state.score > 0 ? '+' : ''}
+                      {state.score}
                   </span>
 
-                                    {isLoggedIn ? (
+                                    <div style={{ display: 'flex', gap: '0.4rem' }}>
                                         <button
-                                            onClick={() => handleUpvote(caption.id, votes)}
-                                            disabled={votingId === caption.id}
+                                            onClick={() => handleVote(caption, 'up')}
+                                            disabled={pendingId === caption.id}
+                                            title={isLoggedIn ? 'Upvote' : 'Log in to vote'}
                                             style={{
-                                                padding: '0.35rem 0.8rem',
-                                                borderRadius: '999px',
-                                                border: 'none',
-                                                background: '#4f46e5',
-                                                color: 'white',
-                                                fontSize: '0.8rem',
-                                                fontWeight: 600,
+                                                width: '34px',
+                                                height: '34px',
+                                                borderRadius: '8px',
+                                                border: '1px solid',
+                                                borderColor: state.userVote === 'up' ? '#16a34a' : '#ddd',
+                                                background: state.userVote === 'up' ? '#dcfce7' : 'white',
+                                                color: state.userVote === 'up' ? '#16a34a' : '#666',
                                                 cursor: 'pointer',
+                                                fontSize: '0.9rem',
                                             }}
                                         >
-                                            ▲ Upvote
+                                            ▲
                                         </button>
-                                    ) : (
-                                        <span style={{ fontSize: '0.75rem', color: '#aaa' }}>Log in to vote</span>
-                                    )}
+                                        <button
+                                            onClick={() => handleVote(caption, 'down')}
+                                            disabled={pendingId === caption.id}
+                                            title={isLoggedIn ? 'Downvote' : 'Log in to vote'}
+                                            style={{
+                                                width: '34px',
+                                                height: '34px',
+                                                borderRadius: '8px',
+                                                border: '1px solid',
+                                                borderColor: state.userVote === 'down' ? '#dc2626' : '#ddd',
+                                                background: state.userVote === 'down' ? '#fee2e2' : 'white',
+                                                color: state.userVote === 'down' ? '#dc2626' : '#666',
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem',
+                                            }}
+                                        >
+                                            ▼
+                                        </button>
+                                    </div>
                                 </div>
+
+                                {!isLoggedIn && (
+                                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: '#aaa' }}>
+                                        Log in to vote
+                                    </p>
+                                )}
                             </div>
                         </div>
                     )

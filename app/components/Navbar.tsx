@@ -67,6 +67,9 @@ export default async function Navbar() {
                                 }}
                             />
                         )}
+                        <Link href="/generate" style={{ color: 'white', textDecoration: 'none', opacity: 0.9 }}>
+                            Generate
+                        </Link>
                         <LogoutButton />
                     </>
                 ) : (

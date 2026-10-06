@@ -4,32 +4,50 @@ import Link from 'next/link'
 
 const PAGE_SIZE = 5
 
-    export default async function Home({
-                                           searchParams,
-                                       }: {
-        searchParams: Promise<{ page?: string }>
-    }) {
-        const supabase = await createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+export default async function Home({
+                                       searchParams,
+                                   }: {
+    searchParams: Promise<{ page?: string }>
+}) {
+    const supabase = await createClient()
+    const {
+        data: { user },
+    } = await supabase.auth.getUser()
 
-        const params = await searchParams
-        const currentPage = Math.max(1, parseInt(params.page || '1', 10))
-        const from = (currentPage - 1) * PAGE_SIZE
-        const to = from + PAGE_SIZE - 1
+    const params = await searchParams
+    const currentPage = Math.max(1, parseInt(params.page || '1', 10))
+    const from = (currentPage - 1) * PAGE_SIZE
+    const to = from + PAGE_SIZE - 1
 
-        const {
-            data: captions,
-            error,
-            count,
-        } = await supabase
+    const {
+        data: captionsRaw,
+        error,
+        count,
+    } = await supabase
         .from('captions')
         .select('*', { count: 'exact' })
-        .order('votes', { ascending: false })
+        .order('created_at', { ascending: false })
         .range(from, to)
 
     if (error) {
         return <p style={{ padding: '2rem' }}>Error loading captions: {error.message}</p>
     }
+
+    // Fetch votes for the captions on this page and compute score + this user's vote
+    const captionIds = (captionsRaw || []).map((c) => c.id)
+    const { data: votes } = await supabase
+        .from('votes')
+        .select('caption_id, vote_type, user_id')
+        .in('caption_id', captionIds.length > 0 ? captionIds : [-1])
+
+    const captions = (captionsRaw || []).map((c) => {
+        const captionVotes = votes?.filter((v) => v.caption_id === c.id) || []
+        const score = captionVotes.reduce((sum, v) => sum + (v.vote_type === 'up' ? 1 : -1), 0)
+        const userVote = user
+            ? captionVotes.find((v) => v.user_id === user.id)?.vote_type ?? null
+            : null
+        return { ...c, score, userVote }
+    })
 
     const totalPages = count ? Math.ceil(count / PAGE_SIZE) : 1
 
@@ -51,12 +69,12 @@ const PAGE_SIZE = 5
                     : 'Browse captions below. Log in to upvote your favorites.'}
             </p>
 
-            <CaptionGrid captions={captions || []} isLoggedIn={!!user} />
+            <CaptionGrid captions={captions} isLoggedIn={!!user} />
 
-            {/* Pagination controls */}
             <div
                 style={{
                     display: 'flex',
+                    flexWrap: 'wrap',
                     justifyContent: 'center',
                     alignItems: 'center',
                     gap: '1rem',
