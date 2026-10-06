@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import CaptionGrid from './CaptionGrid'
+import Landing from './components/Landing'
 import Link from 'next/link'
 
 const PAGE_SIZE = 5
@@ -14,6 +15,18 @@ export default async function Home({
         data: { user },
     } = await supabase.auth.getUser()
 
+    // Logged out → show the landing page with a small read-only preview
+    if (!user) {
+        const { data: preview } = await supabase
+            .from('captions')
+            .select('id, text, image_url')
+            .order('created_at', { ascending: false })
+            .limit(5)
+
+        return <Landing previewCaptions={preview || []} />
+    }
+
+    // Logged in → the real app
     const params = await searchParams
     const currentPage = Math.max(1, parseInt(params.page || '1', 10))
     const from = (currentPage - 1) * PAGE_SIZE
@@ -33,7 +46,6 @@ export default async function Home({
         return <p style={{ padding: '2rem' }}>Error loading captions: {error.message}</p>
     }
 
-    // Fetch votes for the captions on this page and compute score + this user's vote
     const captionIds = (captionsRaw || []).map((c) => c.id)
     const { data: votes } = await supabase
         .from('votes')
@@ -43,9 +55,7 @@ export default async function Home({
     const captions = (captionsRaw || []).map((c) => {
         const captionVotes = votes?.filter((v) => v.caption_id === c.id) || []
         const score = captionVotes.reduce((sum, v) => sum + (v.vote_type === 'up' ? 1 : -1), 0)
-        const userVote = user
-            ? captionVotes.find((v) => v.user_id === user.id)?.vote_type ?? null
-            : null
+        const userVote = captionVotes.find((v) => v.user_id === user.id)?.vote_type ?? null
         return { ...c, score, userVote }
     })
 
@@ -64,12 +74,10 @@ export default async function Home({
                 Caption Rating App
             </h1>
             <p style={{ color: '#666', marginBottom: '2rem' }}>
-                {user
-                    ? 'Vote for your favorite captions below. Click an image to view it full size.'
-                    : 'Browse captions below. Log in to upvote your favorites.'}
+                Vote for your favorite captions below. Click an image to view it full size.
             </p>
 
-            <CaptionGrid captions={captions} isLoggedIn={!!user} />
+            <CaptionGrid captions={captions} isLoggedIn={true} />
 
             <div
                 style={{
