@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function ProfilePage() {
     const supabase = createClient()
@@ -18,6 +19,7 @@ export default function ProfilePage() {
     const [avatarFile, setAvatarFile] = useState<File | null>(null)
     const [errors, setErrors] = useState<{ firstName?: string; lastName?: string }>({})
     const [message, setMessage] = useState('')
+    const [hasProfile, setHasProfile] = useState(false)
 
     useEffect(() => {
         const loadProfile = async () => {
@@ -40,6 +42,7 @@ export default function ProfilePage() {
                 setFirstName(profile.first_name || '')
                 setLastName(profile.last_name || '')
                 setAvatarUrl(profile.avatar_url)
+                setHasProfile(!!(profile.first_name && profile.last_name))
             }
             setLoading(false)
         }
@@ -93,16 +96,13 @@ export default function ProfilePage() {
             newAvatarUrl = publicUrlData.publicUrl
         }
 
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .upsert({
-                id: user.id,
-                first_name: firstName.trim(),
-                last_name: lastName.trim(),
-                avatar_url: newAvatarUrl,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', user.id)
+        const { error: updateError } = await supabase.from('profiles').upsert({
+            id: user.id,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            avatar_url: newAvatarUrl,
+            updated_at: new Date().toISOString(),
+        })
 
         setSaving(false)
 
@@ -114,140 +114,191 @@ export default function ProfilePage() {
         }
     }
 
-    if (loading) return <p style={{ padding: '2rem' }}>Loading...</p>
+    if (loading) {
+        return (
+            <main style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+                Loading...
+            </main>
+        )
+    }
 
     const displayAvatar = avatarPreview || avatarUrl
 
     return (
-        <main style={{ maxWidth: '440px', margin: '3rem auto', padding: '0 1.5rem' }}>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 700, marginBottom: '0.25rem' }}>
-                Complete your profile
-            </h1>
-            <p style={{ color: '#666', marginBottom: '2rem' }}>Tell us a bit about yourself.</p>
-
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                    <div
-                        onClick={() => fileInputRef.current?.click()}
+        <main
+            style={{
+                minHeight: 'calc(100vh - 70px)',
+                background: 'linear-gradient(135deg, #f8f7ff, #f1f0fb)',
+                padding: '2.5rem 1.5rem',
+            }}
+        >
+            <div style={{ maxWidth: '460px', margin: '0 auto' }}>
+                {hasProfile && (
+                    <Link
+                        href="/"
                         style={{
-                            position: 'relative',
-                            width: '120px',
-                            height: '120px',
-                            borderRadius: '50%',
-                            cursor: 'pointer',
-                            overflow: 'hidden',
-                            border: '3px solid #eee',
-                            background: '#f3f3f3',
-                            display: 'flex',
+                            display: 'inline-flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
+                            gap: '0.4rem',
+                            color: '#666',
+                            textDecoration: 'none',
+                            fontSize: '0.9rem',
+                            marginBottom: '1.25rem',
                         }}
                     >
-                        {displayAvatar ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={displayAvatar}
-                                alt="Avatar preview"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                        ) : (
-                            <span style={{ fontSize: '2.5rem', color: '#bbb' }}>👤</span>
-                        )}
-                        <div
-                            style={{
-                                position: 'absolute',
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                padding: '0.35rem 0',
-                                background: 'rgba(0,0,0,0.55)',
-                                color: 'white',
-                                fontSize: '0.7rem',
-                                textAlign: 'center',
-                            }}
-                        >
-                            Change
-                        </div>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileChange}
-                            style={{ display: 'none' }}
-                        />
-                    </div>
+                        ← Back to captions
+                    </Link>
+                )}
+
+                <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
+                    <h1 style={{ fontSize: '1.7rem', fontWeight: 800, margin: 0, color: '#111' }}>
+                        {hasProfile ? 'Your Profile' : 'Complete Your Profile'}
+                    </h1>
+                    <p style={{ color: '#777', marginTop: '0.4rem', fontSize: '0.9rem' }}>
+                        {hasProfile ? 'Update your info anytime.' : 'Tell us a bit about yourself to get started.'}
+                    </p>
                 </div>
 
-                <div>
-                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                        First name <span style={{ color: 'crimson' }}>*</span>
-                    </label>
-                    <input
-                        type="text"
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                        style={{
-                            display: 'block',
-                            width: '100%',
-                            padding: '0.6rem 0.75rem',
-                            marginTop: '0.4rem',
-                            border: `1px solid ${errors.firstName ? 'crimson' : '#ccc'}`,
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                        }}
-                    />
-                    {errors.firstName && (
-                        <p style={{ color: 'crimson', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                            {errors.firstName}
-                        </p>
-                    )}
-                </div>
-
-                <div>
-                    <label style={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                        Last name <span style={{ color: 'crimson' }}>*</span>
-                    </label>
-                    <input
-                        type="text"
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                        style={{
-                            display: 'block',
-                            width: '100%',
-                            padding: '0.6rem 0.75rem',
-                            marginTop: '0.4rem',
-                            border: `1px solid ${errors.lastName ? 'crimson' : '#ccc'}`,
-                            borderRadius: '8px',
-                            boxSizing: 'border-box',
-                        }}
-                    />
-                    {errors.lastName && (
-                        <p style={{ color: 'crimson', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                            {errors.lastName}
-                        </p>
-                    )}
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={saving}
+                <form
+                    onSubmit={handleSave}
                     style={{
-                        padding: '0.7rem',
-                        borderRadius: '8px',
-                        border: 'none',
-                        background: '#4f46e5',
-                        color: 'white',
-                        fontWeight: 600,
-                        cursor: 'pointer',
+                        background: 'white',
+                        borderRadius: '18px',
+                        padding: '2rem',
+                        boxShadow: '0 10px 35px rgba(79,70,229,0.1)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1.25rem',
                     }}
                 >
-                    {saving ? 'Saving...' : 'Save profile'}
-                </button>
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <div
+                            onClick={() => fileInputRef.current?.click()}
+                            style={{
+                                position: 'relative',
+                                width: '110px',
+                                height: '110px',
+                                borderRadius: '50%',
+                                cursor: 'pointer',
+                                overflow: 'hidden',
+                                border: '3px solid #eee',
+                                background: '#f3f3f3',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            {displayAvatar ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                    src={displayAvatar}
+                                    alt="Avatar preview"
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                />
+                            ) : (
+                                <span style={{ fontSize: '2.2rem', color: '#bbb' }}>👤</span>
+                            )}
+                            <div
+                                style={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    padding: '0.3rem 0',
+                                    background: 'rgba(0,0,0,0.55)',
+                                    color: 'white',
+                                    fontSize: '0.68rem',
+                                    textAlign: 'center',
+                                }}
+                            >
+                                Change
+                            </div>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={handleFileChange}
+                                style={{ display: 'none' }}
+                            />
+                        </div>
+                    </div>
 
-                {message && (
-                    <p style={{ color: message.startsWith('Error') ? 'crimson' : 'green' }}>{message}</p>
-                )}
-            </form>
+                    <div>
+                        <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#333' }}>
+                            First name <span style={{ color: 'crimson' }}>*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={firstName}
+                            onChange={(e) => setFirstName(e.target.value)}
+                            style={{
+                                display: 'block',
+                                width: '100%',
+                                padding: '0.65rem 0.8rem',
+                                marginTop: '0.4rem',
+                                border: `1px solid ${errors.firstName ? 'crimson' : '#e0e0e0'}`,
+                                borderRadius: '10px',
+                                boxSizing: 'border-box',
+                                fontSize: '0.95rem',
+                            }}
+                        />
+                        {errors.firstName && (
+                            <p style={{ color: 'crimson', fontSize: '0.78rem', marginTop: '0.25rem' }}>
+                                {errors.firstName}
+                            </p>
+                        )}
+                    </div>
+
+                    <div>
+                        <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#333' }}>
+                            Last name <span style={{ color: 'crimson' }}>*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={lastName}
+                            onChange={(e) => setLastName(e.target.value)}
+                            style={{
+                                display: 'block',
+                                width: '100%',
+                                padding: '0.65rem 0.8rem',
+                                marginTop: '0.4rem',
+                                border: `1px solid ${errors.lastName ? 'crimson' : '#e0e0e0'}`,
+                                borderRadius: '10px',
+                                boxSizing: 'border-box',
+                                fontSize: '0.95rem',
+                            }}
+                        />
+                        {errors.lastName && (
+                            <p style={{ color: 'crimson', fontSize: '0.78rem', marginTop: '0.25rem' }}>
+                                {errors.lastName}
+                            </p>
+                        )}
+                    </div>
+
+                    <button
+                        type="submit"
+                        disabled={saving}
+                        style={{
+                            padding: '0.75rem',
+                            borderRadius: '12px',
+                            border: 'none',
+                            background: 'linear-gradient(90deg, #4f46e5, #7c3aed)',
+                            color: 'white',
+                            fontWeight: 700,
+                            fontSize: '0.95rem',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        {saving ? 'Saving...' : 'Save profile'}
+                    </button>
+
+                    {message && (
+                        <p style={{ color: message.startsWith('Error') ? 'crimson' : 'green', fontSize: '0.85rem' }}>
+                            {message}
+                        </p>
+                    )}
+                </form>
+            </div>
         </main>
     )
 }

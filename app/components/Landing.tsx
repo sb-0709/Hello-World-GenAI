@@ -41,22 +41,40 @@ export default function Landing({ previewCaptions }: { previewCaptions: PreviewC
                 >
                     Upload a photo, let AI write the caption, and let the crowd decide if it's actually funny.
                 </p>
-                <Link
-                    href="/login"
-                    style={{
-                        display: 'inline-block',
-                        padding: '0.85rem 2rem',
-                        borderRadius: '999px',
-                        background: 'white',
-                        color: '#4f46e5',
-                        fontWeight: 700,
-                        fontSize: '1.05rem',
-                        textDecoration: 'none',
-                        boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-                    }}
-                >
-                    Get started — it's free
-                </Link>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <Link
+                        href="/login"
+                        style={{
+                            display: 'inline-block',
+                            padding: '0.85rem 2rem',
+                            borderRadius: '999px',
+                            background: 'white',
+                            color: '#4f46e5',
+                            fontWeight: 700,
+                            fontSize: '1.05rem',
+                            textDecoration: 'none',
+                            boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+                        }}
+                    >
+                        Get started — it's free
+                    </Link>
+                    <Link
+                        href="/leaderboard"
+                        style={{
+                            display: 'inline-block',
+                            padding: '0.85rem 2rem',
+                            borderRadius: '999px',
+                            background: 'rgba(255,255,255,0.15)',
+                            color: 'white',
+                            fontWeight: 700,
+                            fontSize: '1.05rem',
+                            textDecoration: 'none',
+                            border: '1px solid rgba(255,255,255,0.4)',
+                        }}
+                    >
+                        🏆 See today's leaderboard
+                    </Link>
+                </div>
             </section>
 
             {/* Preview strip */}

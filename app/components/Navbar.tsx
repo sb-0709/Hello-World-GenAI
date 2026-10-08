@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import LogoutButton from './LogoutButton'
+import NavLinks from './NavLinks'
 
 export default async function Navbar() {
     const supabase = await createClient()
@@ -46,32 +46,7 @@ export default async function Navbar() {
 
             <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
                 {user ? (
-                    <>
-                        <Link href="/dashboard" style={{ color: 'white', textDecoration: 'none', opacity: 0.9 }}>
-                            Dashboard
-                        </Link>
-                        <Link href="/profile" style={{ color: 'white', textDecoration: 'none', opacity: 0.9 }}>
-                            Profile
-                        </Link>
-                        {avatarUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                                src={avatarUrl}
-                                alt="Your avatar"
-                                style={{
-                                    width: '32px',
-                                    height: '32px',
-                                    borderRadius: '50%',
-                                    objectFit: 'cover',
-                                    border: '2px solid white',
-                                }}
-                            />
-                        )}
-                        <Link href="/generate" style={{ color: 'white', textDecoration: 'none', opacity: 0.9 }}>
-                            Generate
-                        </Link>
-                        <LogoutButton />
-                    </>
+                    <NavLinks avatarUrl={avatarUrl} />
                 ) : (
                     <Link
                         href="/login"

@@ -69,7 +69,7 @@ export default function GeneratePage() {
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                     <div style={{ fontSize: '2.25rem', marginBottom: '0.5rem' }}>✨</div>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#111' }}>
-                        Generate a caption
+                        Generate a Caption
                     </h1>
                     <p style={{ color: '#777', marginTop: '0.4rem', fontSize: '0.95rem' }}>
                         Upload a photo and let AI write a caption for it.
