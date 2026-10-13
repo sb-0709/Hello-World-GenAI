@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getFollowCounts } from '@/lib/follows'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -69,6 +70,8 @@ export default async function DashboardPage() {
         }
     }
 
+    const { followers, following } = await getFollowCounts(supabase, user.id)
+
     const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user.email
 
     const statCard = (emoji: string, label: string, value: string | number, bg: string, accent: string) => (
@@ -96,6 +99,49 @@ export default async function DashboardPage() {
             </p>
             <p style={{ margin: '0.2rem 0 0', fontSize: '1.9rem', fontWeight: 800, color: accent }}>{value}</p>
         </div>
+    )
+
+    // Same visual as statCard, but clickable — used for the follower/following
+    // counts so people can jump straight to those lists from the dashboard.
+    const linkStatCard = (
+        emoji: string,
+        label: string,
+        value: string | number,
+        bg: string,
+        accent: string,
+        href: string
+    ) => (
+        <Link
+            href={href}
+            style={{
+                padding: '1.4rem 1.25rem',
+                borderRadius: '16px',
+                background: bg,
+                position: 'relative',
+                overflow: 'hidden',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'transform 0.15s ease',
+            }}
+        >
+            <span style={{ fontSize: '1.6rem' }}>{emoji}</span>
+            <p
+                style={{
+                    margin: '0.6rem 0 0',
+                    color: 'rgba(0,0,0,0.5)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                }}
+            >
+                {label}
+            </p>
+            <p style={{ margin: '0.2rem 0 0', fontSize: '1.9rem', fontWeight: 800, color: accent }}>{value}</p>
+            <p style={{ margin: '0.3rem 0 0', fontSize: '0.75rem', fontWeight: 700, color: accent, opacity: 0.75 }}>
+                View list →
+            </p>
+        </Link>
     )
 
     return (
@@ -168,25 +214,74 @@ export default async function DashboardPage() {
                             Welcome back, {fullName}! 👋
                         </p>
                         <p style={{ margin: '0.2rem 0 0', opacity: 0.85, fontSize: '0.9rem' }}>{user.email}</p>
+                        <p style={{ margin: '0.35rem 0 0', opacity: 0.85, fontSize: '0.85rem' }}>
+                            <strong>{followers}</strong> follower{followers === 1 ? '' : 's'} · <strong>{following}</strong> following
+                        </p>
                     </div>
-                    <Link
-                        href="/profile"
+                    <div
                         style={{
                             marginLeft: 'auto',
-                            padding: '0.5rem 1rem',
-                            borderRadius: '999px',
-                            background: 'rgba(255,255,255,0.18)',
-                            color: 'white',
-                            textDecoration: 'none',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
+                            display: 'flex',
+                            gap: '0.5rem',
                             position: 'relative',
                             zIndex: 1,
-                            whiteSpace: 'nowrap',
                         }}
                     >
-                        Edit profile
-                    </Link>
+                        <Link
+                            href={`/u/${user.id}`}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '999px',
+                                background: 'rgba(255,255,255,0.18)',
+                                color: 'white',
+                                textDecoration: 'none',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            View public profile
+                        </Link>
+                        <Link
+                            href="/profile"
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '999px',
+                                background: 'rgba(255,255,255,0.18)',
+                                color: 'white',
+                                textDecoration: 'none',
+                                fontSize: '0.85rem',
+                                fontWeight: 700,
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            Edit profile
+                        </Link>
+                    </div>
+                </div>
+
+                <p
+                    style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        color: '#a1a1aa',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: '0.75rem',
+                    }}
+                >
+                    👥 Your network
+                </p>
+                <div
+                    style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+                        gap: '1rem',
+                        marginBottom: '2.5rem',
+                    }}
+                >
+                    {linkStatCard('💖', 'Followers', followers, 'linear-gradient(135deg, #fce7f3, #fbcfe8)', '#db2777', `/u/${user.id}/followers`)}
+                    {linkStatCard('➡️', 'Following', following, 'linear-gradient(135deg, #ede9fe, #ddd6fe)', '#6d28d9', `/u/${user.id}/following`)}
                 </div>
 
                 <p

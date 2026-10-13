@@ -1,23 +1,27 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserLeaderboard, getTopCaption, startOfToday, startOfWeek } from '@/lib/leaderboard'
+import { getYesterdaysWinner } from '@/lib/dailyChallenge'
 import Link from 'next/link'
 
 function PersonRow({
                        entry,
                        rank,
                    }: {
-    entry: { firstName: string | null; lastName: string | null; avatarUrl: string | null; score: number }
+    entry: { userId: string; firstName: string | null; lastName: string | null; avatarUrl: string | null; score: number }
     rank: number
 }) {
     const name = [entry.firstName, entry.lastName].filter(Boolean).join(' ') || 'Anonymous'
     const medals = ['🥇', '🥈', '🥉']
     return (
-        <div
+        <Link
+            href={`/u/${entry.userId}`}
             style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '1rem',
                 padding: '0.9rem 1.25rem',
+                textDecoration: 'none',
+                color: 'inherit',
             }}
         >
       <span style={{ fontSize: '1.2rem', width: '28px', textAlign: 'center' }}>
@@ -47,7 +51,7 @@ function PersonRow({
             )}
             <span style={{ flex: 1, fontWeight: 600, color: '#222', fontSize: '0.95rem' }}>{name}</span>
             <span style={{ fontWeight: 800, color: '#16a34a' }}>+{entry.score}</span>
-        </div>
+        </Link>
     )
 }
 
@@ -107,19 +111,32 @@ export default async function LeaderboardPage() {
         weekly,
         allTime,
         topCaptionToday,
+        challengeWinner,
     ] = await Promise.all([
         supabase.auth.getUser(),
         getUserLeaderboard(supabase, today, 3),
         getUserLeaderboard(supabase, weekStart, 1),
         getUserLeaderboard(supabase, undefined, 1),
         getTopCaption(supabase, today),
+        getYesterdaysWinner(supabase),
     ])
 
     return (
         <main
             style={{
                 minHeight: 'calc(100vh - 70px)',
-                background: 'linear-gradient(135deg, #1e1b4b, #4f46e5, #7c3aed)',
+                // Light, soft background — a warm cream→blush→lavender wash with a
+                // faint confetti-dot texture (layered radial-gradients) so the page
+                // still feels festive without needing an external image file.
+                background: `
+                    radial-gradient(circle at 12% 18%, rgba(236,72,153,0.10) 0%, transparent 7%),
+                    radial-gradient(circle at 85% 12%, rgba(245,158,11,0.12) 0%, transparent 6%),
+                    radial-gradient(circle at 70% 85%, rgba(124,58,237,0.10) 0%, transparent 7%),
+                    radial-gradient(circle at 25% 75%, rgba(236,72,153,0.09) 0%, transparent 6%),
+                    radial-gradient(circle at 95% 55%, rgba(79,70,229,0.08) 0%, transparent 6%),
+                    linear-gradient(160deg, #fff7ed, #fdf2f8 45%, #f5f3ff)
+                `,
+                backgroundAttachment: 'fixed',
                 padding: '3rem 1.5rem 4rem',
             }}
         >
@@ -131,15 +148,181 @@ export default async function LeaderboardPage() {
                             fontSize: '2.1rem',
                             fontWeight: 800,
                             margin: 0,
-                            color: 'white',
+                            color: '#312e81',
                         }}
                     >
                         The Billboard
                     </h1>
-                    <p style={{ color: 'rgba(255,255,255,0.8)', marginTop: '0.4rem', fontSize: '0.95rem' }}>
+                    <p style={{ color: '#6b6190', marginTop: '0.4rem', fontSize: '0.95rem' }}>
                         Who's winning the internet today, this week, and all time.
                     </p>
                 </div>
+
+                {/* Daily Challenge winner — the most prominent feature on the page.
+                    Pink/magenta to match the "Caption This!" card on the home page,
+                    deliberately distinct from the amber "Top Caption of the Day" below
+                    so the two don't blur together (that one is regular captions voting,
+                    this one is yesterday's "Caption This" contest winner). */}
+                {challengeWinner && (
+                    <div
+                        style={{
+                            borderRadius: '26px',
+                            overflow: 'hidden',
+                            marginBottom: '2rem',
+                            background: 'linear-gradient(135deg, #db2777, #ec4899 45%, #a21caf)',
+                            border: '3px solid #fde68a',
+                            boxShadow: `
+                                0 0 0 6px rgba(250,204,21,0.18),
+                                0 25px 60px rgba(219,39,119,0.5),
+                                0 0 40px rgba(250,204,21,0.25)
+                            `,
+                            position: 'relative',
+                            transform: 'scale(1.02)',
+                        }}
+                    >
+                        {/* Decorative sparkles / watermark crown */}
+                        <span
+                            style={{
+                                position: 'absolute',
+                                top: '-28px',
+                                right: '-10px',
+                                fontSize: '8rem',
+                                opacity: 0.18,
+                                transform: 'rotate(8deg)',
+                                pointerEvents: 'none',
+                            }}
+                        >
+                            👑
+                        </span>
+                        <span style={{ position: 'absolute', top: '14px', left: '48%', fontSize: '1.3rem', opacity: 0.6 }}>✨</span>
+                        <span style={{ position: 'absolute', bottom: '18px', left: '8%', fontSize: '1.1rem', opacity: 0.5 }}>⭐</span>
+
+                        {/* Ribbon badge across the top */}
+                        <div
+                            style={{
+                                background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
+                                padding: '0.55rem 1.75rem',
+                                textAlign: 'center',
+                            }}
+                        >
+                            <p
+                                style={{
+                                    margin: 0,
+                                    color: '#78350f',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 900,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                }}
+                            >
+                                🏆 Yesterday's "Caption This!" Champion 🏆
+                            </p>
+                        </div>
+
+                        <div style={{ padding: '1.75rem 1.75rem 2rem', position: 'relative' }}>
+                            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img
+                                        src={challengeWinner.imageUrl}
+                                        alt="Winning challenge image"
+                                        style={{
+                                            width: '150px',
+                                            height: '150px',
+                                            objectFit: 'cover',
+                                            borderRadius: '18px',
+                                            border: '4px solid #fde68a',
+                                            boxShadow: '0 10px 28px rgba(0,0,0,0.35), 0 0 0 4px rgba(255,255,255,0.25)',
+                                        }}
+                                    />
+                                    <span
+                                        style={{
+                                            position: 'absolute',
+                                            top: '-18px',
+                                            left: '50%',
+                                            transform: 'translateX(-50%)',
+                                            fontSize: '2.2rem',
+                                            filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.4))',
+                                        }}
+                                    >
+                                        👑
+                                    </span>
+                                </div>
+
+                                <div style={{ flex: 1, minWidth: '240px', textAlign: 'center' }}>
+                                    <p
+                                        style={{
+                                            margin: '0 0 1rem',
+                                            color: 'white',
+                                            fontSize: '1.5rem',
+                                            fontWeight: 800,
+                                            lineHeight: 1.3,
+                                            fontStyle: 'italic',
+                                            textShadow: '0 2px 10px rgba(0,0,0,0.25)',
+                                        }}
+                                    >
+                                        “{challengeWinner.captionText}”
+                                    </p>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                                        <Link
+                                            href={`/u/${challengeWinner.creatorId}`}
+                                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}
+                                        >
+                                            {challengeWinner.creatorAvatarUrl ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img
+                                                    src={challengeWinner.creatorAvatarUrl}
+                                                    alt={challengeWinner.creatorName}
+                                                    style={{
+                                                        width: '42px',
+                                                        height: '42px',
+                                                        borderRadius: '50%',
+                                                        objectFit: 'cover',
+                                                        border: '2.5px solid #fde68a',
+                                                        boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                                                    }}
+                                                />
+                                            ) : (
+                                                <div
+                                                    style={{
+                                                        width: '42px',
+                                                        height: '42px',
+                                                        borderRadius: '50%',
+                                                        background: 'rgba(255,255,255,0.25)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        fontSize: '1.2rem',
+                                                        border: '2.5px solid #fde68a',
+                                                    }}
+                                                >
+                                                    👤
+                                                </div>
+                                            )}
+                                            <span style={{ color: 'white', fontWeight: 800, fontSize: '1.05rem' }}>
+                                                {challengeWinner.creatorName}
+                                            </span>
+                                        </Link>
+                                        <span
+                                            style={{
+                                                background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
+                                                color: '#78350f',
+                                                fontWeight: 900,
+                                                fontSize: '0.85rem',
+                                                padding: '0.35rem 0.85rem',
+                                                borderRadius: '999px',
+                                                boxShadow: '0 3px 10px rgba(245,158,11,0.5)',
+                                            }}
+                                        >
+                                            🔥 +{challengeWinner.score} votes
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Top caption of the day — the marquee feature */}
                 <div
@@ -262,12 +445,13 @@ export default async function LeaderboardPage() {
                                     display: 'inline-block',
                                     padding: '0.7rem 1.5rem',
                                     borderRadius: '999px',
-                                    background: 'white',
-                                    color: '#4f46e5',
+                                    background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                                    color: 'white',
                                     textDecoration: 'none',
                                     fontWeight: 700,
                                     fontSize: '0.9rem',
                                     marginRight: '0.75rem',
+                                    boxShadow: '0 6px 16px rgba(79,70,229,0.25)',
                                 }}
                             >
                                 ✨ Generate your own
@@ -275,9 +459,10 @@ export default async function LeaderboardPage() {
                             <Link
                                 href="/"
                                 style={{
-                                    color: 'rgba(255,255,255,0.8)',
+                                    color: '#6b6190',
                                     fontSize: '0.88rem',
                                     textDecoration: 'none',
+                                    fontWeight: 600,
                                 }}
                             >
                                 ← Back to captions
@@ -290,11 +475,12 @@ export default async function LeaderboardPage() {
                                 display: 'inline-block',
                                 padding: '0.7rem 1.5rem',
                                 borderRadius: '999px',
-                                background: 'white',
-                                color: '#4f46e5',
+                                background: 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                                color: 'white',
                                 textDecoration: 'none',
                                 fontWeight: 700,
                                 fontSize: '0.9rem',
+                                boxShadow: '0 6px 16px rgba(79,70,229,0.25)',
                             }}
                         >
                             Log in to Vote &amp; Generate 🌟

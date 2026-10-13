@@ -2,11 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import CaptionGrid from './CaptionGrid'
 import Landing from './components/Landing'
 import Link from 'next/link'
+import DailyChallenge from './components/DailyChallenge'
+import { getOrCreateTodayChallenge } from '@/lib/dailyChallenge'
+import { getFollowingIds } from '@/lib/follows'
 
 const PAGE_SIZE = 5
 
 type Sort = 'new' | 'top'
-type Scope = 'all' | 'mine' | 'unvoted'
+type Scope = 'all' | 'mine' | 'unvoted' | 'following'
 type Range = 'all' | 'week'
 
 export default async function Home({
@@ -34,7 +37,8 @@ export default async function Home({
     const params = await searchParams
     const currentPage = Math.max(1, parseInt(params.page || '1', 10))
     const sort: Sort = params.sort === 'top' ? 'top' : 'new'
-    const scope: Scope = params.scope === 'mine' || params.scope === 'unvoted' ? params.scope : 'all'
+    const scope: Scope =
+        params.scope === 'mine' || params.scope === 'unvoted' || params.scope === 'following' ? params.scope : 'all'
     const range: Range = params.range === 'week' ? 'week' : 'all'
 
     // Fetch the scoped set of captions (scope + range filters applied at the DB level where possible)
@@ -45,6 +49,14 @@ export default async function Home({
 
     if (scope === 'mine') {
         captionsQuery = captionsQuery.eq('created_by', user.id)
+    }
+
+    let followingIds: string[] = []
+    if (scope === 'following') {
+        followingIds = await getFollowingIds(supabase, user.id)
+        // Nobody followed yet → force an empty result set rather than showing
+        // everyone (a real -1 id that will never match any caption's author).
+        captionsQuery = captionsQuery.in('created_by', followingIds.length > 0 ? followingIds : ['00000000-0000-0000-0000-000000000000'])
     }
 
     if (range === 'week') {
@@ -92,6 +104,61 @@ export default async function Home({
     const from = (currentPage - 1) * PAGE_SIZE
     const pageCaptions = captions.slice(from, from + PAGE_SIZE)
 
+    // Today's Daily Challenge
+    const challenge = await getOrCreateTodayChallenge(supabase)
+    let challengeEntries: {
+        id: number
+        captionText: string
+        score: number
+        userVote: 'up' | 'down' | null
+        authorId: string
+        authorName: string
+        isMine: boolean
+    }[] = []
+    let hasSubmittedChallenge = false
+
+    if (challenge) {
+        const { data: entriesRaw } = await supabase
+            .from('challenge_entries')
+            .select('id, caption_text, user_id')
+            .eq('challenge_id', challenge.id)
+
+        if (entriesRaw && entriesRaw.length > 0) {
+            const entryIds = entriesRaw.map((e) => e.id)
+            const authorIds = [...new Set(entriesRaw.map((e) => e.user_id))]
+
+            const { data: entryVotes } = await supabase
+                .from('challenge_votes')
+                .select('entry_id, vote_type, user_id')
+                .in('entry_id', entryIds)
+
+            const { data: authorProfiles } = await supabase
+                .from('profiles')
+                .select('id, first_name, last_name')
+                .in('id', authorIds)
+
+            const profileById = new Map((authorProfiles || []).map((p) => [p.id, p]))
+
+            challengeEntries = entriesRaw.map((e) => {
+                const votesForEntry = entryVotes?.filter((v) => v.entry_id === e.id) || []
+                const score = votesForEntry.reduce((sum, v) => sum + (v.vote_type === 'up' ? 1 : -1), 0)
+                const userVote = votesForEntry.find((v) => v.user_id === user.id)?.vote_type ?? null
+                const profile = profileById.get(e.user_id)
+                return {
+                    id: e.id,
+                    captionText: e.caption_text,
+                    score,
+                    userVote: userVote as 'up' | 'down' | null,
+                    authorId: e.user_id,
+                    authorName: [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || 'Anonymous',
+                    isMine: e.user_id === user.id,
+                }
+            })
+
+            hasSubmittedChallenge = entriesRaw.some((e) => e.user_id === user.id)
+        }
+    }
+
     const filterLink = (overrides: { sort?: Sort; scope?: Scope; range?: Range }) => {
         const qs = new URLSearchParams({
             sort: overrides.sort ?? sort,
@@ -130,6 +197,14 @@ export default async function Home({
                 Vote for your favorite captions below. Click an image to view it full size.
             </p>
 
+            {challenge && (
+                <DailyChallenge
+                    imageUrl={challenge.image_url}
+                    entries={challengeEntries}
+                    hasSubmitted={hasSubmittedChallenge}
+                />
+            )}
+
             <Link
                 href="/leaderboard"
                 style={{
@@ -138,18 +213,18 @@ export default async function Home({
                     justifyContent: 'space-between',
                     padding: '1.25rem 1.75rem',
                     borderRadius: '16px',
-                    background: 'linear-gradient(135deg, #1e1b4b, #4f46e5, #7c3aed)',
+                    background: 'linear-gradient(135deg, #78350f, #d97706, #fbbf24)',
                     color: 'white',
                     textDecoration: 'none',
                     marginBottom: '2rem',
-                    boxShadow: '0 8px 25px rgba(79,70,229,0.2)',
+                    boxShadow: '0 8px 25px rgba(217,119,6,0.3)',
                 }}
             >
                 <div>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: '1.1rem' }}>
                         🏆 See who's topping the charts
                     </p>
-                    <p style={{ margin: '0.25rem 0 0', opacity: 0.85, fontSize: '0.88rem' }}>
+                    <p style={{ margin: '0.25rem 0 0', opacity: 0.9, fontSize: '0.88rem' }}>
                         Daily, weekly, and all-time rankings — updated live.
                     </p>
                 </div>
@@ -158,7 +233,7 @@ export default async function Home({
                         padding: '0.55rem 1.1rem',
                         borderRadius: '999px',
                         background: 'white',
-                        color: '#4f46e5',
+                        color: '#b45309',
                         fontWeight: 700,
                         fontSize: '0.9rem',
                         whiteSpace: 'nowrap',
@@ -213,6 +288,9 @@ export default async function Home({
                 <Link href={filterLink({ scope: 'unvoted' })} style={pillStyle(scope === 'unvoted')}>
                     🗳️ Not voted yet
                 </Link>
+                <Link href={filterLink({ scope: 'following' })} style={pillStyle(scope === 'following')}>
+                    👥 Following
+                </Link>
 
                 <span
                     style={{
@@ -244,13 +322,27 @@ export default async function Home({
                         borderRadius: '12px',
                     }}
                 >
-                    {scope === 'mine'
-                        ? "You haven't generated any captions yet."
-                        : scope === 'unvoted'
-                            ? "You've voted on everything — nice work!"
-                            : range === 'week'
-                                ? 'No captions posted this week yet.'
-                                : 'No captions yet.'}
+                    {scope === 'following' ? (
+                        followingIds.length === 0 ? (
+                            <>
+                                You're not following anyone yet — check out the{' '}
+                                <Link href="/leaderboard" style={{ color: '#4f46e5', fontWeight: 700 }}>
+                                    leaderboard
+                                </Link>{' '}
+                                to find people to follow.
+                            </>
+                        ) : (
+                            "The people you follow haven't posted any captions yet."
+                        )
+                    ) : scope === 'mine' ? (
+                        "You haven't generated any captions yet."
+                    ) : scope === 'unvoted' ? (
+                        "You've voted on everything — nice work!"
+                    ) : range === 'week' ? (
+                        'No captions posted this week yet.'
+                    ) : (
+                        'No captions yet.'
+                    )}
                 </div>
             ) : (
                 <CaptionGrid captions={pageCaptions} isLoggedIn={true} />
