@@ -11,7 +11,10 @@ const MODELS = ['gemini-3.8-flash', 'gemini-flash-lite-latest']
 const MAX_RETRIES_PER_MODEL = 2
 
 const CREATIVE_INSTRUCTION =
-    'Be as creative as possible in crafting your caption. It depends on your own thinking on how you craft your caption!'
+    'Be as creative as possible in crafting your caption. It depends on your own thinking on how you craft your caption! ' +
+    'IMPORTANT: Respond with exactly ONE single caption — not a list of options, not multiple alternatives to choose from. ' +
+    'Do not use markdown formatting, bullet points, numbered lists, or bold/italic asterisks. ' +
+    'Just output the plain caption text itself, and nothing else (no preamble like "Here is a caption:", no quotes around it).'
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms))

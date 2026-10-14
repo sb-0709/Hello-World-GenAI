@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, JSX, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -26,6 +26,10 @@ function avatarFor(id: string) {
     return AVATARS[hash % AVATARS.length]
 }
 
+// Gemini is asked for plain text, but every so often still slips in a
+// stray **bold** or `code` span. This renders just enough markdown to look
+// clean (used for published entries), without pulling in a full markdown
+// library.
 function renderInline(text: string, keyPrefix: string) {
     // Order matters: **bold** must be checked before the single-* italic
     // pattern, otherwise "**bold**" gets chopped into "*bold*" pieces.
@@ -62,60 +66,6 @@ function renderInline(text: string, keyPrefix: string) {
     })
 }
 
-function MarkdownLite({ text }: { text: string }) {
-    const lines = text.split('\n')
-    const blocks: JSX.Element[] = []
-    let listBuffer: string[] = []
-
-    const flushList = (key: string) => {
-        if (listBuffer.length === 0) return
-        blocks.push(
-            <ul key={key} style={{ margin: '0.3rem 0 0.6rem', paddingLeft: '1.2rem' }}>
-                {listBuffer.map((item, i) => (
-                    <li key={i} style={{ marginBottom: '0.3rem' }}>
-                        {renderInline(item, `${key}-li-${i}`)}
-                    </li>
-                ))}
-            </ul>
-        )
-        listBuffer = []
-    }
-
-    lines.forEach((rawLine, idx) => {
-        const line = rawLine.trim()
-        const key = `b-${idx}`
-
-        if (!line) {
-            flushList(`${key}-list`)
-            return
-        }
-        if (/^(\*{3,}|-{3,})$/.test(line)) {
-            flushList(`${key}-list`)
-            blocks.push(
-                <hr
-                    key={key}
-                    style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.25)', margin: '0.6rem 0' }}
-                />
-            )
-            return
-        }
-        const bulletMatch = line.match(/^[*-]\s+(.*)$/)
-        if (bulletMatch) {
-            listBuffer.push(bulletMatch[1])
-            return
-        }
-        flushList(`${key}-list`)
-        blocks.push(
-            <p key={key} style={{ margin: '0 0 0.5rem', lineHeight: 1.5 }}>
-                {renderInline(line, key)}
-            </p>
-        )
-    })
-    flushList('tail-list')
-
-    return <>{blocks}</>
-}
-
 export default function DailyChallenge({
                                            imageUrl,
                                            entries: initialEntries,
@@ -130,8 +80,8 @@ export default function DailyChallenge({
 
     const [phase, setPhase] = useState<Phase>(hasSubmitted ? 'submitted' : 'form')
     const [prompt, setPrompt] = useState('')
-    const [suggestions, setSuggestions] = useState('') // raw Gemini output, shown read-only for inspiration
-    const [finalCaption, setFinalCaption] = useState('') // what the user actually publishes
+    const [promptError, setPromptError] = useState(false) // true after a click-with-empty-prompt, highlights the box
+    const [finalCaption, setFinalCaption] = useState('') // the AI-generated caption, editable before publishing
     const [generating, setGenerating] = useState(false)
     const [publishing, setPublishing] = useState(false)
     const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -163,7 +113,13 @@ export default function DailyChallenge({
     }, [showEntries])
 
     const handleGenerate = async () => {
-        if (!prompt.trim()) return
+        if (!prompt.trim()) {
+            setPromptError(true)
+            setErrorMsg('Please enter a prompt first so the AI knows what to write about.')
+            return
+        }
+
+        setPromptError(false)
         setGenerating(true)
         setErrorMsg(null)
 
@@ -180,7 +136,7 @@ export default function DailyChallenge({
             return
         }
 
-        setSuggestions(data.captionText)
+        setFinalCaption(data.captionText)
         setGenerating(false)
         setPhase('review')
     }
@@ -408,18 +364,28 @@ export default function DailyChallenge({
                             </p>
                             <textarea
                                 value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
+                                onChange={(e) => {
+                                    setPrompt(e.target.value)
+                                    if (e.target.value.trim()) {
+                                        setPromptError(false)
+                                        setErrorMsg(null)
+                                    }
+                                }}
                                 placeholder="🤔 e.g. Write a witty one-liner from the subject's perspective..."
                                 rows={3}
                                 style={{
                                     width: '100%',
                                     padding: '0.7rem',
                                     borderRadius: '10px',
-                                    border: 'none',
+                                    border: promptError ? '2px solid #fda4af' : '2px solid rgba(255,255,255,0.9)',
+                                    outline: 'none',
                                     fontSize: '0.9rem',
                                     fontFamily: 'inherit',
                                     resize: 'vertical',
                                     boxSizing: 'border-box',
+                                    boxShadow: promptError
+                                        ? '0 0 0 3px rgba(248,113,113,0.35)'
+                                        : '0 0 0 3px rgba(255,255,255,0.25)',
                                 }}
                             />
                             {errorMsg && (
@@ -430,7 +396,7 @@ export default function DailyChallenge({
                             <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
                                 <button
                                     onClick={handleGenerate}
-                                    disabled={generating || !prompt.trim()}
+                                    disabled={generating}
                                     style={{
                                         padding: '0.65rem 1.5rem',
                                         borderRadius: '999px',
@@ -439,7 +405,7 @@ export default function DailyChallenge({
                                         color: '#db2777',
                                         fontWeight: 800,
                                         fontSize: '0.92rem',
-                                        cursor: generating || !prompt.trim() ? 'not-allowed' : 'pointer',
+                                        cursor: generating ? 'not-allowed' : 'pointer',
                                         boxShadow: generating ? 'none' : '0 4px 14px rgba(0,0,0,0.2)',
                                     }}
                                 >
@@ -483,39 +449,12 @@ export default function DailyChallenge({
                                     letterSpacing: '0.04em',
                                 }}
                             >
-                                🤖 AI suggestions — pick a line, remix it, or ignore it entirely
-                            </p>
-                            <div
-                                style={{
-                                    background: 'rgba(0,0,0,0.18)',
-                                    borderRadius: '10px',
-                                    padding: '0.7rem 0.85rem',
-                                    maxHeight: '140px',
-                                    overflowY: 'auto',
-                                    marginBottom: '0.9rem',
-                                }}
-                            >
-                                <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem' }}>
-                                    <MarkdownLite text={suggestions} />
-                                </div>
-                            </div>
-
-                            <p
-                                style={{
-                                    margin: '0 0 0.5rem',
-                                    color: 'rgba(255,255,255,0.85)',
-                                    fontSize: '0.72rem',
-                                    fontWeight: 800,
-                                    textTransform: 'uppercase',
-                                    letterSpacing: '0.04em',
-                                }}
-                            >
-                                ✅ Your entry — write or paste your final caption here
+                                🤖 AI wrote this for you — edit if you want
                             </p>
                             <textarea
                                 value={finalCaption}
                                 onChange={(e) => setFinalCaption(e.target.value)}
-                                placeholder="Type your final caption, or copy a line from the suggestions above and tweak it…"
+                                placeholder="Your AI-generated caption will appear here…"
                                 rows={3}
                                 style={{
                                     width: '100%',
@@ -557,6 +496,7 @@ export default function DailyChallenge({
                                     onClick={() => {
                                         setPhase('form')
                                         setErrorMsg(null)
+                                        setPromptError(false)
                                     }}
                                     disabled={publishing}
                                     style={{
