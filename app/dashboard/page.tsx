@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getFollowCounts } from '@/lib/follows'
+import { getUserBadges } from '@/lib/badges'
+import BadgeGrid from '@/app/components/BadgeGrid'
 import Link from 'next/link'
 
 export default async function DashboardPage() {
@@ -71,6 +73,8 @@ export default async function DashboardPage() {
     }
 
     const { followers, following } = await getFollowCounts(supabase, user.id)
+    const badges = await getUserBadges(supabase, user.id)
+    const earnedCount = badges.filter((b) => b.earned).length
 
     const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user.email
 
@@ -258,6 +262,22 @@ export default async function DashboardPage() {
                             Edit profile
                         </Link>
                     </div>
+                </div>
+
+                <p
+                    style={{
+                        fontSize: '0.8rem',
+                        fontWeight: 800,
+                        color: '#a1a1aa',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        marginBottom: '0.75rem',
+                    }}
+                >
+                    🏅 Badges ({earnedCount}/{badges.length})
+                </p>
+                <div style={{ marginBottom: '2.5rem' }}>
+                    <BadgeGrid badges={badges} compact />
                 </div>
 
                 <p

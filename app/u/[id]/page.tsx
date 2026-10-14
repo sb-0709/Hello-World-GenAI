@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { getFollowCounts, isFollowing } from '@/lib/follows'
+import { getUserBadges } from '@/lib/badges'
 import FollowButton from '@/app/components/FollowButton'
+import BadgeGrid from '@/app/components/BadgeGrid'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
@@ -23,7 +25,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
     const isOwnProfile = viewer?.id === profile.id
     const name = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'Anonymous'
 
-    const [{ followers, following }, viewerFollowsThem, { data: captionsRaw }] = await Promise.all([
+    const [{ followers, following }, viewerFollowsThem, { data: captionsRaw }, badges] = await Promise.all([
         getFollowCounts(supabase, profile.id),
         viewer && !isOwnProfile ? isFollowing(supabase, viewer.id, profile.id) : Promise.resolve(false),
         supabase
@@ -31,7 +33,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
             .select('id, text, image_url, created_at')
             .eq('created_by', profile.id)
             .order('created_at', { ascending: false }),
+        getUserBadges(supabase, profile.id),
     ])
+
+    const earnedBadges = badges.filter((b) => b.earned)
 
     const captionIds = (captionsRaw || []).map((c) => c.id)
     const { data: votes } = await supabase
@@ -149,6 +154,18 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                         </Link>
                     )}
                 </div>
+
+                {/* Badges — the public profile is a trophy case, so only show what's
+                    earned (not locked/in-progress badges, which belong on the
+                    dashboard where it's about your own progress). */}
+                {earnedBadges.length > 0 && (
+                    <div style={{ marginBottom: '2rem' }}>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#312e81', margin: '0 0 1rem' }}>
+                            🏅 Badges ({earnedBadges.length})
+                        </h2>
+                        <BadgeGrid badges={earnedBadges} />
+                    </div>
+                )}
 
                 {/* Their captions */}
                 <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#312e81', margin: '0 0 1rem' }}>
