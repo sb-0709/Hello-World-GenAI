@@ -2,7 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import { getOrCreateTodayChallenge } from '@/lib/dailyChallenge'
 import { NextResponse } from 'next/server'
 
-const MODELS = ['gemini-3.8-flash', 'gemini-3.8-flash-lite']
+// 'gemini-3.8-flash-lite' isn't a real text-generation model (only a -tts
+// variant exists) — that's what was 404ing. Confirmed via ListModels that
+// 'gemini-3.8-flash' itself is valid. The fallback is now
+// 'gemini-flash-lite-latest', Google's alias that always points at the
+// current lite model, so this won't go stale as model versions roll forward.
+const MODELS = ['gemini-3.8-flash', 'gemini-flash-lite-latest']
 const MAX_RETRIES_PER_MODEL = 2
 
 const CREATIVE_INSTRUCTION =
