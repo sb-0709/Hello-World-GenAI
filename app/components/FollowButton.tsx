@@ -13,6 +13,7 @@ export default function FollowButton({
     const router = useRouter()
     const [following, setFollowing] = useState(initialIsFollowing)
     const [loading, setLoading] = useState(false)
+    const [hovering, setHovering] = useState(false)
 
     const toggle = async () => {
         setLoading(true)
@@ -35,25 +36,33 @@ export default function FollowButton({
         setLoading(false)
     }
 
+    // When already following, hovering swaps the label/color to a clear
+    // "Unfollow" affordance so it's obvious the button does something when
+    // clicked — not just a static "you're following them" badge.
+    const showUnfollow = following && hovering
+
     return (
         <button
             onClick={toggle}
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
             disabled={loading}
             style={{
                 padding: '0.55rem 1.4rem',
                 borderRadius: '999px',
-                border: following ? '1.5px solid #c7c7f5' : 'none',
-                background: following ? 'white' : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
-                color: following ? '#4f46e5' : 'white',
+                border: following ? (showUnfollow ? '1.5px solid #fca5a5' : '1.5px solid #c7c7f5') : 'none',
+                background: following ? (showUnfollow ? '#fef2f2' : 'white') : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                color: following ? (showUnfollow ? '#dc2626' : '#4f46e5') : 'white',
                 fontWeight: 700,
                 fontSize: '0.9rem',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 opacity: loading ? 0.7 : 1,
                 boxShadow: following ? 'none' : '0 6px 16px rgba(79,70,229,0.3)',
                 transition: 'all 0.15s ease',
+                minWidth: '118px',
             }}
         >
-            {loading ? '…' : following ? '✓ Following' : '+ Follow'}
+            {loading ? '…' : following ? (showUnfollow ? '✕ Unfollow' : '✓ Following') : '+ Follow'}
         </button>
     )
 }

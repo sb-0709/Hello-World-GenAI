@@ -5,6 +5,7 @@ import Link from 'next/link'
 import DailyChallenge from './components/DailyChallenge'
 import { getOrCreateTodayChallenge } from '@/lib/dailyChallenge'
 import { getFollowingIds } from '@/lib/follows'
+import FilterEmptyToast from './components/FilterEmptyToast'
 
 const PAGE_SIZE = 5
 
@@ -313,37 +314,55 @@ export default async function Home({
             </div>
 
             {pageCaptions.length === 0 ? (
-                <div
-                    style={{
-                        padding: '2.5rem',
-                        textAlign: 'center',
-                        color: '#999',
-                        border: '1px dashed #ddd',
-                        borderRadius: '12px',
-                    }}
-                >
-                    {scope === 'following' ? (
-                        followingIds.length === 0 ? (
-                            <>
-                                You're not following anyone yet — check out the{' '}
-                                <Link href="/leaderboard" style={{ color: '#4f46e5', fontWeight: 700 }}>
-                                    leaderboard
-                                </Link>{' '}
-                                to find people to follow.
-                            </>
+                <>
+                    <FilterEmptyToast
+                        messageKey={`${scope}:${range}:${sort}`}
+                        message={
+                            scope === 'following'
+                                ? followingIds.length === 0
+                                    ? "You're not following anyone yet"
+                                    : "The people you follow haven't posted anything yet"
+                                : scope === 'mine'
+                                    ? "You haven't generated any captions yet"
+                                    : scope === 'unvoted'
+                                        ? "You've voted on everything — nice work!"
+                                        : range === 'week'
+                                            ? 'No captions posted this week yet'
+                                            : 'No captions match this filter'
+                        }
+                    />
+                    <div
+                        style={{
+                            padding: '2.5rem',
+                            textAlign: 'center',
+                            color: '#999',
+                            border: '1px dashed #ddd',
+                            borderRadius: '12px',
+                        }}
+                    >
+                        {scope === 'following' ? (
+                            followingIds.length === 0 ? (
+                                <>
+                                    You're not following anyone yet — check out the{' '}
+                                    <Link href="/leaderboard" style={{ color: '#4f46e5', fontWeight: 700 }}>
+                                        leaderboard
+                                    </Link>{' '}
+                                    to find people to follow.
+                                </>
+                            ) : (
+                                "The people you follow haven't posted any captions yet."
+                            )
+                        ) : scope === 'mine' ? (
+                            "You haven't generated any captions yet."
+                        ) : scope === 'unvoted' ? (
+                            "You've voted on everything — nice work!"
+                        ) : range === 'week' ? (
+                            'No captions posted this week yet.'
                         ) : (
-                            "The people you follow haven't posted any captions yet."
-                        )
-                    ) : scope === 'mine' ? (
-                        "You haven't generated any captions yet."
-                    ) : scope === 'unvoted' ? (
-                        "You've voted on everything — nice work!"
-                    ) : range === 'week' ? (
-                        'No captions posted this week yet.'
-                    ) : (
-                        'No captions yet.'
-                    )}
-                </div>
+                            'No captions yet.'
+                        )}
+                    </div>
+                </>
             ) : (
                 <CaptionGrid captions={pageCaptions} isLoggedIn={true} />
             )}

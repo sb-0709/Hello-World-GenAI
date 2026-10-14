@@ -30,14 +30,17 @@ export default function NavLinks({ avatarUrl }: { avatarUrl: string | null }) {
 
     return (
         <>
+            <Link href="/" style={linkStyle('/')}>
+                📋 Captions
+            </Link>
             <Link href="/dashboard" style={linkStyle('/dashboard')}>
                 Dashboard
             </Link>
             <Link href="/leaderboard" style={linkStyle('/leaderboard')}>
                 🏆 Leaderboard
             </Link>
-            <Link href="/profile" style={linkStyle('/profile')}>
-                Profile
+            <Link href="/following" style={linkStyle('/following')}>
+                👥 Following
             </Link>
             {avatarUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
