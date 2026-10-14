@@ -40,7 +40,7 @@ function PersonRow({
                         width: '36px',
                         height: '36px',
                         borderRadius: '50%',
-                        background: '#eee',
+                        background: 'var(--surface-muted)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -49,7 +49,7 @@ function PersonRow({
                     👤
                 </div>
             )}
-            <span style={{ flex: 1, fontWeight: 600, color: '#222', fontSize: '0.95rem' }}>{name}</span>
+            <span style={{ flex: 1, fontWeight: 600, color: 'var(--text)', fontSize: '0.95rem' }}>{name}</span>
             <span style={{ fontWeight: 800, color: '#16a34a' }}>+{entry.score}</span>
         </Link>
     )
@@ -71,13 +71,13 @@ function Panel({
     return (
         <div
             style={{
-                background: 'white',
+                background: 'var(--surface)',
                 borderRadius: '18px',
                 overflow: 'hidden',
                 boxShadow: '0 10px 30px rgba(79,70,229,0.08)',
             }}
         >
-            <div style={{ padding: '1.1rem 1.25rem', borderBottom: '1px solid #f0f0f0', background: accent }}>
+            <div style={{ padding: '1.1rem 1.25rem', borderBottom: '1px solid var(--border-soft)', background: accent }}>
                 <p style={{ margin: 0, fontWeight: 800, fontSize: '1rem', color: 'white' }}>
                     {icon} {title}
                 </p>
@@ -92,7 +92,7 @@ function Panel({
 
 function EmptyState({ message }: { message: string }) {
     return (
-        <div style={{ padding: '1.5rem', textAlign: 'center', color: '#999', fontSize: '0.88rem' }}>
+        <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-faint)', fontSize: '0.88rem' }}>
             {message}
         </div>
     )
@@ -134,7 +134,7 @@ export default async function LeaderboardPage() {
                     radial-gradient(circle at 70% 85%, rgba(124,58,237,0.10) 0%, transparent 7%),
                     radial-gradient(circle at 25% 75%, rgba(236,72,153,0.09) 0%, transparent 6%),
                     radial-gradient(circle at 95% 55%, rgba(79,70,229,0.08) 0%, transparent 6%),
-                    linear-gradient(160deg, #fff7ed, #fdf2f8 45%, #f5f3ff)
+                    var(--page-gradient)
                 `,
                 backgroundAttachment: 'fixed',
                 padding: '3rem 1.5rem 4rem',
@@ -148,12 +148,12 @@ export default async function LeaderboardPage() {
                             fontSize: '2.1rem',
                             fontWeight: 800,
                             margin: 0,
-                            color: '#312e81',
+                            color: 'var(--accent-heading)',
                         }}
                     >
                         The Billboard
                     </h1>
-                    <p style={{ color: '#6b6190', marginTop: '0.4rem', fontSize: '0.95rem' }}>
+                    <p style={{ color: 'var(--muted-link)', marginTop: '0.4rem', fontSize: '0.95rem' }}>
                         Who's winning the internet today, this week, and all time.
                     </p>
                 </div>
@@ -392,7 +392,7 @@ export default async function LeaderboardPage() {
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 {daily.map((entry, i) => (
-                                    <div key={entry.userId} style={{ borderBottom: i < daily.length - 1 ? '1px solid #f5f5f5' : 'none' }}>
+                                    <div key={entry.userId} style={{ borderBottom: i < daily.length - 1 ? '1px solid var(--border-soft)' : 'none' }}>
                                         <PersonRow entry={entry} rank={i} />
                                     </div>
                                 ))}
@@ -459,7 +459,7 @@ export default async function LeaderboardPage() {
                             <Link
                                 href="/"
                                 style={{
-                                    color: '#6b6190',
+                                    color: 'var(--muted-link)',
                                     fontSize: '0.88rem',
                                     textDecoration: 'none',
                                     fontWeight: 600,

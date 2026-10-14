@@ -3,6 +3,22 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Extended palette used across the app's cards/sections */
+  --surface: #ffffff;        /* card/panel background */
+  --surface-muted: #fafafa;  /* subtle recessed background (e.g. filter bars) */
+  --text: #1c1917;           /* primary text */
+  --text-muted: #666666;     /* secondary/body text */
+  --text-faint: #999999;     /* placeholders, empty-state text */
+  --border: #e5e5e5;         /* default border */
+  --border-soft: #eeeeee;
+
+  /* Warm cream/blush/lavender backdrop used on profile/leaderboard/following pages */
+  --page-gradient: linear-gradient(160deg, #fff7ed, #fdf2f8 45%, #f5f3ff);
+  --muted-link: #6b6190;     /* the small "← Back to captions" style links on those pages */
+  --accent-heading: #312e81; /* section headings like "Badges", "Followers (3)" */
+
+  color-scheme: light;
 }
 
 @theme inline {
@@ -12,11 +28,62 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* System preference — applies only when the user hasn't picked a theme explicitly */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+
+    --surface: #242428;        /* clearly lighter than the page backdrop, so cards visibly raise off it */
+    --surface-muted: #1c1c20;  /* recessed areas (filter bars), darker than --surface */
+    --text: #f0f0f0;
+    --text-muted: #a8a8a8;
+    --text-faint: #7a7a7a;
+    --border: #58585f;        /* lighter, so card outlines still pop against the dark surface */
+    --border-soft: #3a3a40;
+
+    --page-gradient: linear-gradient(160deg, #140d0a, #140a16 45%, #0c0815);
+    --muted-link: #b8aed6;
+    --accent-heading: #c7c3f0;
+
+    --font-geist-sans: "Geist Sans", sans-serif;
+    --font-geist-mono: "Geist Mono", monospace;
+
+    color-scheme: dark;
   }
+}
+
+/* Explicit user choice (saved by the theme toggle) always wins over system preference */
+:root[data-theme='light'] {
+  --background: #ffffff;
+  --foreground: #171717;
+  --surface: #ffffff;
+  --surface-muted: #fafafa;
+  --text: #1c1917;
+  --text-muted: #666666;
+  --text-faint: #999999;
+  --border: #e5e5e5;
+  --border-soft: #eeeeee;
+  --page-gradient: linear-gradient(160deg, #fff7ed, #fdf2f8 45%, #f5f3ff);
+  --muted-link: #6b6190;
+  --accent-heading: #312e81;
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --surface: #242428;
+  --surface-muted: #1c1c20;
+  --text: #f0f0f0;
+  --text-muted: #a8a8a8;
+  --text-faint: #7a7a7a;
+  --border: #58585f;
+  --border-soft: #3a3a40;
+  --page-gradient: linear-gradient(160deg, #140d0a, #140a16 45%, #0c0815);
+  --muted-link: #b8aed6;
+  --accent-heading: #c7c3f0;
+  color-scheme: dark;
 }
 
 body {

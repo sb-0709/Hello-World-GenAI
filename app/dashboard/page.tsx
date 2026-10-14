@@ -152,16 +152,15 @@ export default async function DashboardPage() {
         <main
             style={{
                 minHeight: 'calc(100vh - 70px)',
-                background:
-                    'radial-gradient(circle at 10% 0%, #ede9fe 0%, transparent 45%), radial-gradient(circle at 90% 20%, #fce7f3 0%, transparent 40%), #fafaff',
+                background: 'var(--page-gradient)',
                 padding: '3rem 1.5rem 4rem',
             }}
         >
             <div style={{ maxWidth: '860px', margin: '0 auto' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.3rem', color: '#1e1b4b' }}>
+                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.3rem', color: 'var(--accent-heading)' }}>
                     Your Dashboard ✨
                 </h1>
-                <p style={{ color: '#888', marginBottom: '2rem', fontSize: '0.95rem' }}>
+                <p style={{ color: 'var(--text-muted)', marginBottom: '2rem', fontSize: '0.95rem' }}>
                     Here's how you're doing in the Caption Rating App.
                 </p>
 
@@ -268,7 +267,7 @@ export default async function DashboardPage() {
                     style={{
                         fontSize: '0.8rem',
                         fontWeight: 800,
-                        color: '#a1a1aa',
+                        color: 'var(--text-faint)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         marginBottom: '0.75rem',
@@ -284,7 +283,7 @@ export default async function DashboardPage() {
                     style={{
                         fontSize: '0.8rem',
                         fontWeight: 800,
-                        color: '#a1a1aa',
+                        color: 'var(--text-faint)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         marginBottom: '0.75rem',
@@ -308,7 +307,7 @@ export default async function DashboardPage() {
                     style={{
                         fontSize: '0.8rem',
                         fontWeight: 800,
-                        color: '#a1a1aa',
+                        color: 'var(--text-faint)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         marginBottom: '0.75rem',
@@ -333,7 +332,7 @@ export default async function DashboardPage() {
                     style={{
                         fontSize: '0.8rem',
                         fontWeight: 800,
-                        color: '#a1a1aa',
+                        color: 'var(--text-faint)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
                         marginBottom: '0.75rem',
@@ -422,8 +421,8 @@ export default async function DashboardPage() {
                     style={{
                         padding: '0.65rem 1.3rem',
                         borderRadius: '999px',
-                        background: '#111',
-                        color: 'white',
+                        background: 'var(--text)',
+                        color: 'var(--background)',
                         textDecoration: 'none',
                         fontWeight: 700,
                         fontSize: '0.9rem',

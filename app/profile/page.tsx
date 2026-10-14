@@ -116,7 +116,7 @@ export default function ProfilePage() {
 
     if (loading) {
         return (
-            <main style={{ padding: '3rem', textAlign: 'center', color: '#888' }}>
+            <main style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
                 Loading...
             </main>
         )
@@ -128,7 +128,7 @@ export default function ProfilePage() {
         <main
             style={{
                 minHeight: 'calc(100vh - 70px)',
-                background: 'linear-gradient(135deg, #f8f7ff, #f1f0fb)',
+                background: 'var(--page-gradient)',
                 padding: '2.5rem 1.5rem',
             }}
         >
@@ -140,7 +140,7 @@ export default function ProfilePage() {
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '0.4rem',
-                            color: '#666',
+                            color: 'var(--text-muted)',
                             textDecoration: 'none',
                             fontSize: '0.9rem',
                             marginBottom: '1.25rem',
@@ -151,10 +151,10 @@ export default function ProfilePage() {
                 )}
 
                 <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-                    <h1 style={{ fontSize: '1.7rem', fontWeight: 800, margin: 0, color: '#111' }}>
+                    <h1 style={{ fontSize: '1.7rem', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
                         {hasProfile ? 'Your Profile' : 'Complete Your Profile'}
                     </h1>
-                    <p style={{ color: '#777', marginTop: '0.4rem', fontSize: '0.9rem' }}>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '0.4rem', fontSize: '0.9rem' }}>
                         {hasProfile ? 'Update your info anytime.' : 'Tell us a bit about yourself to get started.'}
                     </p>
                 </div>
@@ -162,7 +162,7 @@ export default function ProfilePage() {
                 <form
                     onSubmit={handleSave}
                     style={{
-                        background: 'white',
+                        background: 'var(--surface)',
                         borderRadius: '18px',
                         padding: '2rem',
                         boxShadow: '0 10px 35px rgba(79,70,229,0.1)',
@@ -181,8 +181,8 @@ export default function ProfilePage() {
                                 borderRadius: '50%',
                                 cursor: 'pointer',
                                 overflow: 'hidden',
-                                border: '3px solid #eee',
-                                background: '#f3f3f3',
+                                border: '3px solid var(--border-soft)',
+                                background: 'var(--surface-muted)',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -196,7 +196,7 @@ export default function ProfilePage() {
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                 />
                             ) : (
-                                <span style={{ fontSize: '2.2rem', color: '#bbb' }}>👤</span>
+                                <span style={{ fontSize: '2.2rem', color: 'var(--text-faint)' }}>👤</span>
                             )}
                             <div
                                 style={{
@@ -224,7 +224,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                        <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#333' }}>
+                        <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text)' }}>
                             First name <span style={{ color: 'crimson' }}>*</span>
                         </label>
                         <input
@@ -236,10 +236,12 @@ export default function ProfilePage() {
                                 width: '100%',
                                 padding: '0.65rem 0.8rem',
                                 marginTop: '0.4rem',
-                                border: `1px solid ${errors.firstName ? 'crimson' : '#e0e0e0'}`,
+                                border: `1px solid ${errors.firstName ? 'crimson' : 'var(--border)'}`,
                                 borderRadius: '10px',
                                 boxSizing: 'border-box',
                                 fontSize: '0.95rem',
+                                background: 'var(--surface)',
+                                color: 'var(--text)',
                             }}
                         />
                         {errors.firstName && (
@@ -250,7 +252,7 @@ export default function ProfilePage() {
                     </div>
 
                     <div>
-                        <label style={{ fontWeight: 600, fontSize: '0.85rem', color: '#333' }}>
+                        <label style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text)' }}>
                             Last name <span style={{ color: 'crimson' }}>*</span>
                         </label>
                         <input
@@ -262,10 +264,12 @@ export default function ProfilePage() {
                                 width: '100%',
                                 padding: '0.65rem 0.8rem',
                                 marginTop: '0.4rem',
-                                border: `1px solid ${errors.lastName ? 'crimson' : '#e0e0e0'}`,
+                                border: `1px solid ${errors.lastName ? 'crimson' : 'var(--border)'}`,
                                 borderRadius: '10px',
                                 boxSizing: 'border-box',
                                 fontSize: '0.95rem',
+                                background: 'var(--surface)',
+                                color: 'var(--text)',
                             }}
                         />
                         {errors.lastName && (

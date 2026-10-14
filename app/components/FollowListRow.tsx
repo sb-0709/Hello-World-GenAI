@@ -20,7 +20,7 @@ export default function FollowListRow({
                 alignItems: 'center',
                 gap: '0.9rem',
                 padding: '0.85rem 1.1rem',
-                background: 'white',
+                background: 'var(--surface)',
                 borderRadius: '14px',
                 marginBottom: '0.7rem',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
@@ -50,7 +50,7 @@ export default function FollowListRow({
                         👤
                     </div>
                 )}
-                <span style={{ fontWeight: 700, color: '#1c1917', fontSize: '0.95rem' }}>{profile.name}</span>
+                <span style={{ fontWeight: 700, color: 'var(--text)', fontSize: '0.95rem' }}>{profile.name}</span>
             </Link>
 
             {!isSelf && viewerId && <FollowButton targetUserId={profile.id} initialIsFollowing={viewerIsFollowing} />}

@@ -51,7 +51,7 @@ export default function FollowButton({
                 padding: '0.55rem 1.4rem',
                 borderRadius: '999px',
                 border: following ? (showUnfollow ? '1.5px solid #fca5a5' : '1.5px solid #c7c7f5') : 'none',
-                background: following ? (showUnfollow ? '#fef2f2' : 'white') : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
+                background: following ? (showUnfollow ? '#fef2f2' : 'var(--surface)') : 'linear-gradient(135deg, #4f46e5, #7c3aed)',
                 color: following ? (showUnfollow ? '#dc2626' : '#4f46e5') : 'white',
                 fontWeight: 700,
                 fontSize: '0.9rem',

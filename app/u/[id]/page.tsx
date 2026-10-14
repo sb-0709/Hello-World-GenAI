@@ -54,7 +54,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
         <main
             style={{
                 minHeight: 'calc(100vh - 70px)',
-                background: 'linear-gradient(160deg, #fff7ed, #fdf2f8 45%, #f5f3ff)',
+                background: 'var(--page-gradient)',
                 padding: '3rem 1.5rem 4rem',
             }}
         >
@@ -64,7 +64,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                     style={{
                         display: 'inline-block',
                         marginBottom: '1.5rem',
-                        color: '#6b6190',
+                        color: 'var(--muted-link)',
                         fontSize: '0.88rem',
                         fontWeight: 600,
                         textDecoration: 'none',
@@ -76,7 +76,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                 {/* Profile header */}
                 <div
                     style={{
-                        background: 'white',
+                        background: 'var(--surface)',
                         borderRadius: '20px',
                         padding: '2rem',
                         boxShadow: '0 10px 30px rgba(79,70,229,0.08)',
@@ -120,16 +120,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                     )}
 
                     <div style={{ flex: 1, minWidth: '200px' }}>
-                        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: '#1c1917' }}>{name}</h1>
+                        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)' }}>{name}</h1>
                         <div style={{ display: 'flex', gap: '1.25rem', marginTop: '0.5rem' }}>
-                            <Link href={`/u/${profile.id}/followers`} style={{ fontSize: '0.88rem', color: '#555', textDecoration: 'none' }}>
-                                <strong style={{ color: '#1c1917' }}>{followers}</strong> follower{followers === 1 ? '' : 's'}
+                            <Link href={`/u/${profile.id}/followers`} style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textDecoration: 'none' }}>
+                                <strong style={{ color: 'var(--text)' }}>{followers}</strong> follower{followers === 1 ? '' : 's'}
                             </Link>
-                            <Link href={`/u/${profile.id}/following`} style={{ fontSize: '0.88rem', color: '#555', textDecoration: 'none' }}>
-                                <strong style={{ color: '#1c1917' }}>{following}</strong> following
+                            <Link href={`/u/${profile.id}/following`} style={{ fontSize: '0.88rem', color: 'var(--text-muted)', textDecoration: 'none' }}>
+                                <strong style={{ color: 'var(--text)' }}>{following}</strong> following
                             </Link>
-                            <span style={{ fontSize: '0.88rem', color: '#555' }}>
-                                <strong style={{ color: '#1c1917' }}>{captions.length}</strong> caption{captions.length === 1 ? '' : 's'}
+                            <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                                <strong style={{ color: 'var(--text)' }}>{captions.length}</strong> caption{captions.length === 1 ? '' : 's'}
                             </span>
                         </div>
                     </div>
@@ -160,7 +160,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                     dashboard where it's about your own progress). */}
                 {earnedBadges.length > 0 && (
                     <div style={{ marginBottom: '2rem' }}>
-                        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#312e81', margin: '0 0 1rem' }}>
+                        <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-heading)', margin: '0 0 1rem' }}>
                             🏅 Badges ({earnedBadges.length})
                         </h2>
                         <BadgeGrid badges={earnedBadges} />
@@ -168,7 +168,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                 )}
 
                 {/* Their captions */}
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#312e81', margin: '0 0 1rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-heading)', margin: '0 0 1rem' }}>
                     {isOwnProfile ? 'Your captions' : `${name}'s captions`}
                 </h2>
 
@@ -177,10 +177,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                         style={{
                             padding: '2.5rem',
                             textAlign: 'center',
-                            color: '#999',
-                            border: '1px dashed #ddd',
+                            color: 'var(--text-faint)',
+                            border: '1px dashed var(--border)',
                             borderRadius: '12px',
-                            background: 'white',
+                            background: 'var(--surface)',
                         }}
                     >
                         {isOwnProfile ? "You haven't generated any captions yet." : `${name} hasn't generated any captions yet.`}
@@ -197,7 +197,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                             <div
                                 key={c.id}
                                 style={{
-                                    background: 'white',
+                                    background: 'var(--surface)',
                                     borderRadius: '14px',
                                     overflow: 'hidden',
                                     boxShadow: '0 6px 16px rgba(0,0,0,0.06)',
@@ -212,10 +212,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                                     />
                                 )}
                                 <div style={{ padding: '0.85rem' }}>
-                                    <p style={{ margin: 0, fontSize: '0.88rem', color: '#1c1917', lineHeight: 1.4 }}>
+                                    <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text)', lineHeight: 1.4 }}>
                                         "{c.text}"
                                     </p>
-                                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', fontWeight: 700, color: c.score > 0 ? '#16a34a' : c.score < 0 ? '#dc2626' : '#999' }}>
+                                    <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', fontWeight: 700, color: c.score > 0 ? '#16a34a' : c.score < 0 ? '#dc2626' : 'var(--text-faint)' }}>
                                         {c.score > 0 ? '+' : ''}
                                         {c.score} votes
                                     </p>

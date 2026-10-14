@@ -33,24 +33,24 @@ export default async function FollowersPage({ params }: { params: Promise<{ id: 
         <main
             style={{
                 minHeight: 'calc(100vh - 70px)',
-                background: 'linear-gradient(160deg, #fff7ed, #fdf2f8 45%, #f5f3ff)',
+                background: 'var(--page-gradient)',
                 padding: '3rem 1.5rem 4rem',
             }}
         >
             <div style={{ maxWidth: '560px', margin: '0 auto' }}>
                 <Link
                     href={`/u/${id}`}
-                    style={{ display: 'inline-block', marginBottom: '1.5rem', color: '#6b6190', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none' }}
+                    style={{ display: 'inline-block', marginBottom: '1.5rem', color: 'var(--muted-link)', fontSize: '0.88rem', fontWeight: 600, textDecoration: 'none' }}
                 >
                     ← Back to {name}'s profile
                 </Link>
 
-                <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#312e81', margin: '0 0 1.25rem' }}>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-heading)', margin: '0 0 1.25rem' }}>
                     {name}'s followers ({followers.length})
                 </h1>
 
                 {followers.length === 0 ? (
-                    <div style={{ padding: '2.5rem', textAlign: 'center', color: '#999', border: '1px dashed #ddd', borderRadius: '12px', background: 'white' }}>
+                    <div style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-faint)', border: '1px dashed var(--border)', borderRadius: '12px', background: 'var(--surface)' }}>
                         No followers yet.
                     </div>
                 ) : (

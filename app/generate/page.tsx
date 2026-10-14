@@ -61,17 +61,17 @@ export default function GeneratePage() {
         <main
             style={{
                 minHeight: 'calc(100vh - 70px)',
-                background: 'linear-gradient(135deg, #f8f7ff, #f1f0fb)',
+                background: 'var(--page-gradient)',
                 padding: '3rem 1.5rem',
             }}
         >
             <div style={{ maxWidth: '520px', margin: '0 auto' }}>
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                     <div style={{ fontSize: '2.25rem', marginBottom: '0.5rem' }}>✨</div>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: '#111' }}>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
                         Generate a Caption
                     </h1>
-                    <p style={{ color: '#777', marginTop: '0.4rem', fontSize: '0.95rem' }}>
+                    <p style={{ color: 'var(--text-muted)', marginTop: '0.4rem', fontSize: '0.95rem' }}>
                         Upload a photo and let AI write a caption for it.
                     </p>
                 </div>
@@ -79,7 +79,7 @@ export default function GeneratePage() {
                 <form
                     onSubmit={handleSubmit}
                     style={{
-                        background: 'white',
+                        background: 'var(--surface)',
                         borderRadius: '18px',
                         padding: '2rem',
                         boxShadow: '0 10px 35px rgba(79,70,229,0.1)',
@@ -98,12 +98,12 @@ export default function GeneratePage() {
                         onDrop={handleDrop}
                         onClick={() => document.getElementById('file-input')?.click()}
                         style={{
-                            border: `2px dashed ${dragActive ? '#4f46e5' : '#ddd'}`,
+                            border: `2px dashed ${dragActive ? '#4f46e5' : 'var(--border)'}`,
                             borderRadius: '14px',
                             padding: preview ? '0' : '2.5rem 1rem',
                             textAlign: 'center',
                             cursor: 'pointer',
-                            background: dragActive ? '#f5f4ff' : '#fafafa',
+                            background: dragActive ? '#f5f4ff' : 'var(--surface-muted)',
                             transition: 'all 0.15s ease',
                             overflow: 'hidden',
                         }}
@@ -139,10 +139,10 @@ export default function GeneratePage() {
                         ) : (
                             <>
                                 <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>📷</div>
-                                <p style={{ margin: 0, fontWeight: 600, color: '#333' }}>
+                                <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>
                                     Drop a photo here, or click to browse
                                 </p>
-                                <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem', color: '#999' }}>
+                                <p style={{ margin: '0.3rem 0 0', fontSize: '0.8rem', color: 'var(--text-faint)' }}>
                                     JPG, PNG, up to a few MB
                                 </p>
                             </>
@@ -158,7 +158,7 @@ export default function GeneratePage() {
 
                     {/* Prompt */}
                     <div>
-                        <label style={{ fontWeight: 600, fontSize: '0.9rem', color: '#333' }}>
+                        <label style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text)' }}>
                             Prompt
                         </label>
                         <textarea
@@ -170,13 +170,15 @@ export default function GeneratePage() {
                                 width: '100%',
                                 padding: '0.75rem',
                                 marginTop: '0.5rem',
-                                border: '1px solid #e0e0e0',
+                                border: '1px solid var(--border)',
                                 borderRadius: '10px',
                                 boxSizing: 'border-box',
                                 fontFamily: 'inherit',
                                 fontSize: '0.95rem',
                                 resize: 'vertical',
                                 outline: 'none',
+                                background: 'var(--surface)',
+                                color: 'var(--text)',
                             }}
                         />
                     </div>
@@ -246,7 +248,7 @@ export default function GeneratePage() {
                             <p style={{ margin: 0, fontWeight: 700, color: '#4f46e5', fontSize: '0.85rem' }}>
                                 GENERATED CAPTION
                             </p>
-                            <p style={{ margin: '0.5rem 0 1rem', color: '#222', fontSize: '1.05rem', lineHeight: 1.4 }}>
+                            <p style={{ margin: '0.5rem 0 1rem', color: '#1c1917', fontSize: '1.05rem', lineHeight: 1.4 }}>
                                 {result}
                             </p>
                             <button
@@ -256,7 +258,7 @@ export default function GeneratePage() {
                                     padding: '0.55rem 1.1rem',
                                     borderRadius: '8px',
                                     border: 'none',
-                                    background: '#111',
+                                    background: '#4f46e5',
                                     color: 'white',
                                     cursor: 'pointer',
                                     fontWeight: 600,

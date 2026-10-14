@@ -173,9 +173,9 @@ export default async function Home({
     const pillStyle = (active: boolean) => ({
         padding: '0.45rem 1rem',
         borderRadius: '999px',
-        border: active ? '1px solid #4f46e5' : '1px solid #e0e0e0',
-        background: active ? '#4f46e5' : 'white',
-        color: active ? 'white' : '#444',
+        border: active ? '1px solid #4f46e5' : '1px solid var(--border)',
+        background: active ? '#4f46e5' : 'var(--surface)',
+        color: active ? 'white' : 'var(--text)',
         fontWeight: active ? 700 : 500,
         fontSize: '0.85rem',
         textDecoration: 'none',
@@ -191,10 +191,10 @@ export default async function Home({
                 boxSizing: 'border-box',
             }}
         >
-            <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.25rem' }}>
+            <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--text)' }}>
                 Caption Rating App
             </h1>
-            <p style={{ color: '#666', marginBottom: '2rem' }}>
+            <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
                 Vote for your favorite captions below. Click an image to view it full size.
             </p>
 
@@ -253,12 +253,12 @@ export default async function Home({
                     alignItems: 'center',
                     marginBottom: '1.75rem',
                     padding: '0.9rem 1.1rem',
-                    background: '#fafafa',
-                    border: '1px solid #eee',
+                    background: 'var(--surface-muted)',
+                    border: '1px solid var(--border-soft)',
                     borderRadius: '12px',
                 }}
             >
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Sort
                 </span>
                 <Link href={filterLink({ sort: 'new' })} style={pillStyle(sort === 'new')}>
@@ -272,12 +272,12 @@ export default async function Home({
                     style={{
                         width: '1px',
                         height: '20px',
-                        background: '#ddd',
+                        background: 'var(--border)',
                         margin: '0 0.25rem',
                     }}
                 />
 
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Show
                 </span>
                 <Link href={filterLink({ scope: 'all' })} style={pillStyle(scope === 'all')}>
@@ -297,12 +297,12 @@ export default async function Home({
                     style={{
                         width: '1px',
                         height: '20px',
-                        background: '#ddd',
+                        background: 'var(--border)',
                         margin: '0 0.25rem',
                     }}
                 />
 
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Range
                 </span>
                 <Link href={filterLink({ range: 'all' })} style={pillStyle(range === 'all')}>
@@ -335,8 +335,8 @@ export default async function Home({
                         style={{
                             padding: '2.5rem',
                             textAlign: 'center',
-                            color: '#999',
-                            border: '1px dashed #ddd',
+                            color: 'var(--text-faint)',
+                            border: '1px dashed var(--border)',
                             borderRadius: '12px',
                         }}
                     >
@@ -382,17 +382,17 @@ export default async function Home({
                     aria-disabled={currentPage <= 1}
                     style={{
                         padding: '0.5rem 1rem',
-                        border: '1px solid #ddd',
+                        border: '1px solid var(--border)',
                         borderRadius: '8px',
                         textDecoration: 'none',
-                        color: currentPage <= 1 ? '#ccc' : '#111',
+                        color: currentPage <= 1 ? 'var(--text-faint)' : 'var(--text)',
                         pointerEvents: currentPage <= 1 ? 'none' : 'auto',
                     }}
                 >
                     ← Previous
                 </Link>
 
-                <span style={{ color: '#666', fontSize: '0.9rem' }}>
+                <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                     Page {currentPage} of {totalPages}
                 </span>
 
@@ -401,10 +401,10 @@ export default async function Home({
                     aria-disabled={currentPage >= totalPages}
                     style={{
                         padding: '0.5rem 1rem',
-                        border: '1px solid #ddd',
+                        border: '1px solid var(--border)',
                         borderRadius: '8px',
                         textDecoration: 'none',
-                        color: currentPage >= totalPages ? '#ccc' : '#111',
+                        color: currentPage >= totalPages ? 'var(--text-faint)' : 'var(--text)',
                         pointerEvents: currentPage >= totalPages ? 'none' : 'auto',
                     }}
                 >

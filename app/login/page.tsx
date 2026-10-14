@@ -19,13 +19,13 @@ export default function LoginPage() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                background: 'linear-gradient(135deg, #eef2ff, #f5f3ff)',
+                background: 'var(--page-gradient)',
                 padding: '1.5rem',
             }}
         >
             <div
                 style={{
-                    background: 'white',
+                    background: 'var(--surface)',
                     borderRadius: '16px',
                     boxShadow: '0 10px 40px rgba(79,70,229,0.15)',
                     padding: '2.5rem 2rem',
@@ -35,10 +35,10 @@ export default function LoginPage() {
                 }}
             >
                 <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🎭</div>
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.4rem', color: '#111' }}>
+                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: '0 0 0.4rem', color: 'var(--text)' }}>
                     Welcome back
                 </h1>
-                <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '2rem' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '2rem' }}>
                     Sign in to vote on your favorite captions
                 </p>
 
@@ -52,12 +52,12 @@ export default function LoginPage() {
                         width: '100%',
                         padding: '0.75rem',
                         borderRadius: '10px',
-                        border: '1px solid #ddd',
-                        background: 'white',
+                        border: '1px solid var(--border)',
+                        background: 'var(--surface)',
                         cursor: 'pointer',
                         fontSize: '0.95rem',
                         fontWeight: 600,
-                        color: '#333',
+                        color: 'var(--text)',
                     }}
                 >
                     <svg width="18" height="18" viewBox="0 0 18 18">
@@ -69,7 +69,7 @@ export default function LoginPage() {
                     Continue with Google
                 </button>
 
-                <p style={{ color: '#aaa', fontSize: '0.75rem', marginTop: '1.5rem' }}>
+                <p style={{ color: 'var(--text-faint)', fontSize: '0.75rem', marginTop: '1.5rem' }}>
                     By continuing, you agree this is a class project 🎓
                 </p>
             </div>

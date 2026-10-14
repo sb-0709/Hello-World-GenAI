@@ -77,7 +77,7 @@ export default async function FollowingPage({
     }
 
     const sectionCard: CSSProperties = {
-        background: 'white',
+        background: 'var(--surface)',
         borderRadius: '20px',
         padding: '1.75rem 2rem',
         boxShadow: '0 10px 30px rgba(79,70,229,0.08)',
@@ -87,23 +87,23 @@ export default async function FollowingPage({
         <main
             style={{
                 minHeight: 'calc(100vh - 70px)',
-                background: 'linear-gradient(160deg, #fff7ed, #fdf2f8 45%, #f5f3ff)',
+                background: 'var(--page-gradient)',
                 padding: '3rem 2.5rem 4rem',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
                 boxSizing: 'border-box',
             }}
         >
             <div style={{ maxWidth: '920px', margin: '0 auto' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem', color: '#1c1917' }}>
+                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.25rem', color: 'var(--text)' }}>
                     👥 Following
                 </h1>
-                <p style={{ color: '#6b6190', marginBottom: '2rem' }}>
+                <p style={{ color: 'var(--muted-link)', marginBottom: '2rem' }}>
                     Find people to follow, then see their captions right here.
                 </p>
 
                 {/* --- Search for people, front and center --- */}
                 <div style={{ ...sectionCard, marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#312e81', margin: '0 0 1rem' }}>
+                    <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-heading)', margin: '0 0 1rem' }}>
                         🔍 Find people to follow
                     </h2>
 
@@ -115,7 +115,7 @@ export default async function FollowingPage({
                                 top: '50%',
                                 transform: 'translateY(-50%)',
                                 fontSize: '1rem',
-                                color: '#a1a1aa',
+                                color: 'var(--text-faint)',
                                 pointerEvents: 'none',
                             }}
                         >
@@ -131,11 +131,11 @@ export default async function FollowingPage({
                                 width: '100%',
                                 padding: '0.85rem 6.5rem 0.85rem 2.75rem',
                                 borderRadius: '999px',
-                                border: '1.5px solid #e4e0f0',
+                                border: '1.5px solid var(--border)',
                                 fontSize: '0.95rem',
                                 outline: 'none',
                                 boxSizing: 'border-box',
-                                background: '#faf9fc',
+                                background: 'var(--surface-muted)',
                             }}
                         />
                         <button
@@ -165,8 +165,8 @@ export default async function FollowingPage({
                                 style={{
                                     padding: '1.5rem',
                                     textAlign: 'center',
-                                    color: '#999',
-                                    border: '1px dashed #ddd',
+                                    color: 'var(--text-faint)',
+                                    border: '1px dashed var(--border)',
                                     borderRadius: '12px',
                                 }}
                             >
@@ -188,7 +188,7 @@ export default async function FollowingPage({
                 </div>
 
                 {/* --- Feed of people you follow --- */}
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#312e81', margin: '0 0 1rem' }}>
+                <h2 style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-heading)', margin: '0 0 1rem' }}>
                     📋 Captions from people you follow
                 </h2>
 
@@ -212,7 +212,7 @@ export default async function FollowingPage({
                                 fontSize: '0.85rem',
                                 fontWeight: 700,
                                 textDecoration: 'none',
-                                background: !selectedPersonId ? '#4f46e5' : 'white',
+                                background: !selectedPersonId ? '#4f46e5' : 'var(--surface)',
                                 color: !selectedPersonId ? 'white' : '#4f46e5',
                                 border: '1.5px solid #4f46e5',
                             }}
@@ -234,9 +234,9 @@ export default async function FollowingPage({
                                         fontSize: '0.85rem',
                                         fontWeight: 700,
                                         textDecoration: 'none',
-                                        background: active ? '#4f46e5' : 'white',
-                                        color: active ? 'white' : '#1c1917',
-                                        border: active ? '1.5px solid #4f46e5' : '1.5px solid #e4e0f0',
+                                        background: active ? '#4f46e5' : 'var(--surface)',
+                                        color: active ? 'white' : 'var(--text)',
+                                        border: active ? '1.5px solid #4f46e5' : '1.5px solid var(--border)',
                                     }}
                                 >
                                     {p.avatarUrl ? (
@@ -274,10 +274,10 @@ export default async function FollowingPage({
                         style={{
                             padding: '2.5rem',
                             textAlign: 'center',
-                            color: '#999',
-                            border: '1px dashed #ddd',
+                            color: 'var(--text-faint)',
+                            border: '1px dashed var(--border)',
                             borderRadius: '16px',
-                            background: 'white',
+                            background: 'var(--surface)',
                         }}
                     >
                         You don&apos;t follow anyone yet — search above to find people to follow.
@@ -287,10 +287,10 @@ export default async function FollowingPage({
                         style={{
                             padding: '2.5rem',
                             textAlign: 'center',
-                            color: '#999',
-                            border: '1px dashed #ddd',
+                            color: 'var(--text-faint)',
+                            border: '1px dashed var(--border)',
                             borderRadius: '16px',
-                            background: 'white',
+                            background: 'var(--surface)',
                         }}
                     >
                         {selectedPersonId

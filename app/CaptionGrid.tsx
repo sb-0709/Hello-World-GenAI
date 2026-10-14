@@ -90,12 +90,13 @@ export default function CaptionGrid({
                         <div
                             key={caption.id}
                             style={{
-                                border: '1px solid #e5e5e5',
+                                border: '1px solid var(--border)',
                                 borderRadius: '12px',
                                 overflow: 'hidden',
                                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
                                 display: 'flex',
                                 flexDirection: 'column',
+                                background: 'var(--surface)',
                             }}
                         >
                             {caption.image_url && (
@@ -114,7 +115,7 @@ export default function CaptionGrid({
                                 />
                             )}
                             <div style={{ padding: '1rem', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.4, flex: 1 }}>
+                                <p style={{ margin: 0, fontSize: '0.95rem', lineHeight: 1.4, flex: 1, color: 'var(--text)' }}>
                                     {caption.text}
                                 </p>
 
@@ -128,7 +129,7 @@ export default function CaptionGrid({
                                 >
                   <span
                       style={{
-                          color: state.score > 0 ? '#16a34a' : state.score < 0 ? '#dc2626' : '#888',
+                          color: state.score > 0 ? '#16a34a' : state.score < 0 ? '#dc2626' : 'var(--text-faint)',
                           fontSize: '0.9rem',
                           fontWeight: 700,
                       }}
@@ -147,9 +148,9 @@ export default function CaptionGrid({
                                                 height: '34px',
                                                 borderRadius: '8px',
                                                 border: '1px solid',
-                                                borderColor: state.userVote === 'up' ? '#16a34a' : '#ddd',
-                                                background: state.userVote === 'up' ? '#dcfce7' : 'white',
-                                                color: state.userVote === 'up' ? '#16a34a' : '#666',
+                                                borderColor: state.userVote === 'up' ? '#16a34a' : 'var(--border)',
+                                                background: state.userVote === 'up' ? '#dcfce7' : 'var(--surface)',
+                                                color: state.userVote === 'up' ? '#16a34a' : 'var(--text-muted)',
                                                 cursor: 'pointer',
                                                 fontSize: '0.9rem',
                                             }}
@@ -165,9 +166,9 @@ export default function CaptionGrid({
                                                 height: '34px',
                                                 borderRadius: '8px',
                                                 border: '1px solid',
-                                                borderColor: state.userVote === 'down' ? '#dc2626' : '#ddd',
-                                                background: state.userVote === 'down' ? '#fee2e2' : 'white',
-                                                color: state.userVote === 'down' ? '#dc2626' : '#666',
+                                                borderColor: state.userVote === 'down' ? '#dc2626' : 'var(--border)',
+                                                background: state.userVote === 'down' ? '#fee2e2' : 'var(--surface)',
+                                                color: state.userVote === 'down' ? '#dc2626' : 'var(--text-muted)',
                                                 cursor: 'pointer',
                                                 fontSize: '0.9rem',
                                             }}
@@ -178,7 +179,7 @@ export default function CaptionGrid({
                                 </div>
 
                                 {!isLoggedIn && (
-                                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: '#aaa' }}>
+                                    <p style={{ margin: '0.4rem 0 0', fontSize: '0.7rem', color: 'var(--text-faint)' }}>
                                         Log in to vote
                                     </p>
                                 )}
