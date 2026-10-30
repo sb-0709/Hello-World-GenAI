@@ -2,13 +2,44 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 // Models to try, in order. If the first is overloaded, we fall back to the next.
-const MODELS = ['gemini-3.8-flash', 'gemini-3.8-flash-lite']
+// 'gemini-flash-lite-latest' is Google's alias for the current lite model, so it
+// won't 404 as model versions roll forward.
+const MODELS = ['gemini-3.8-flash', 'gemini-flash-lite-latest']
 
 // How many times to retry a single model on a transient (503/429) error.
 const MAX_RETRIES_PER_MODEL = 2
 
+// Appended to whatever prompt the user wrote, so the model returns ONE plain caption
+// instead of a markdown list of "options".
+const SINGLE_CAPTION_INSTRUCTION =
+    'IMPORTANT: Respond with exactly ONE single caption — not a list, not multiple options or alternatives. ' +
+    'Do not use markdown, bullet points, asterisks, or headings. ' +
+    'Output only the plain caption text itself: no preamble like "Here is a caption:" and no quotation marks around it.'
+
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// Safety net: models don't always obey instructions. If we still get markdown or a
+// list of alternatives back, keep just the first caption and strip the formatting.
+function cleanCaption(raw: string): string {
+    let text = raw.trim()
+
+    // Cut off anything after a horizontal-rule style separator (***, ---, ___),
+    // which is where "A few other options..." lists start.
+    const separator = text.search(/\*{3,}|-{3,}|_{3,}/)
+    if (separator > 0) text = text.slice(0, separator)
+
+    // Strip markdown emphasis / code ticks, and surrounding quotes.
+    text = text
+        .replace(/\*+/g, '')
+        .replace(/`+/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/^["“”']+|["“”']+$/g, '')
+        .trim()
+
+    return text || raw.trim()
 }
 
 async function callGemini(model: string, promptText: string, base64Image: string, mimeType: string) {
@@ -37,8 +68,8 @@ async function callGemini(model: string, promptText: string, base64Image: string
 }
 
 // Tries each model in MODELS, retrying transient errors (503 overloaded, 429 rate limited)
-// with a short backoff before moving to the next model. Returns the parsed response body
-// on success, or throws a typed error the route handler turns into a friendly message.
+// with a short backoff before moving to the next model. Returns the caption text on
+// success, or throws a typed error the route handler turns into a friendly message.
 async function generateCaptionWithRetry(promptText: string, base64Image: string, mimeType: string) {
     let lastStatus = 500
     let lastDetail = 'Unknown error'
@@ -90,6 +121,8 @@ function friendlyErrorMessage(status: number): string {
     return "Something went wrong generating your caption. Please try again."
 }
 
+// Generates ONE caption for the user to review and edit. Saves nothing —
+// the page calls /api/generate-caption/publish once the user is happy with it.
 export async function POST(request: Request) {
     const supabase = await createClient()
     const {
@@ -102,62 +135,24 @@ export async function POST(request: Request) {
 
     const formData = await request.formData()
     const file = formData.get('image') as File
-    const promptText = (formData.get('prompt') as string) || 'Write a short, funny caption for this image.'
+    const userPrompt = ((formData.get('prompt') as string) || '').trim() || 'Write a short, funny caption for this image.'
 
     if (!file) {
         return NextResponse.json({ error: 'No image provided' }, { status: 400 })
     }
 
-    // 1. Upload image to Supabase Storage
-    const fileExt = file.name.split('.').pop()
-    const filePath = `${user.id}/${Date.now()}.${fileExt}`
-
-    const { error: uploadError } = await supabase.storage.from('caption-images').upload(filePath, file)
-
-    if (uploadError) {
-        console.error('Caption image upload failed:', uploadError)
-        return NextResponse.json(
-            { error: "Couldn't upload your image. Please try again." },
-            { status: 500 }
-        )
-    }
-
-    const { data: publicUrlData } = supabase.storage.from('caption-images').getPublicUrl(filePath)
-    const imageUrl = publicUrlData.publicUrl
-
-    // 2. Call Gemini with the image, retrying transient errors and falling back models
     const imageBuffer = await file.arrayBuffer()
     const base64Image = Buffer.from(imageBuffer).toString('base64')
 
-    let captionText: string
+    const fullPrompt = `${userPrompt}\n\n${SINGLE_CAPTION_INSTRUCTION}`
+
     try {
-        captionText = await generateCaptionWithRetry(promptText, base64Image, file.type)
+        const raw = await generateCaptionWithRetry(fullPrompt, base64Image, file.type)
+        return NextResponse.json({ captionText: cleanCaption(raw) })
     } catch (err: any) {
         // Log the real error for debugging; never send it to the client.
         console.error('Gemini caption generation failed:', err)
         const status = err?.status ?? 500
         return NextResponse.json({ error: friendlyErrorMessage(status) }, { status: 502 })
     }
-
-    // 3. Save to captions table
-    const { data: newCaption, error: insertError } = await supabase
-        .from('captions')
-        .insert({
-            text: captionText,
-            image_url: imageUrl,
-            prompt: promptText,
-            created_by: user.id,
-        })
-        .select()
-        .single()
-
-    if (insertError) {
-        console.error('Caption save failed:', insertError)
-        return NextResponse.json(
-            { error: "Your caption was generated, but we couldn't save it. Please try again." },
-            { status: 500 }
-        )
-    }
-
-    return NextResponse.json({ caption: newCaption })
 }

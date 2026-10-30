@@ -10,12 +10,16 @@ export default function GeneratePage() {
     const [prompt, setPrompt] = useState('Write a short, funny caption for this image.')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
-    const [result, setResult] = useState<string | null>(null)
+    const [result, setResult] = useState<string | null>(null) // null = nothing generated yet; string = editable caption
+    const [posting, setPosting] = useState(false)
     const [dragActive, setDragActive] = useState(false)
 
     const handleFile = (f: File | null) => {
         setFile(f)
         if (f) setPreview(URL.createObjectURL(f))
+        // A different photo makes any previous caption stale.
+        setResult(null)
+        setError('')
     }
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,12 +52,41 @@ export default function GeneratePage() {
             if (!res.ok) {
                 setError(data.error || 'Something went wrong')
             } else {
-                setResult(data.caption.text)
+                setResult(data.captionText)
             }
         } catch {
             setError('Network error — please try again')
         } finally {
             setLoading(false)
+        }
+    }
+
+    const handlePost = async () => {
+        if (!file || !result || !result.trim()) return
+
+        setPosting(true)
+        setError('')
+
+        const formData = new FormData()
+        formData.append('image', file)
+        formData.append('prompt', prompt)
+        formData.append('captionText', result)
+
+        try {
+            const res = await fetch('/api/generate-caption/publish', { method: 'POST', body: formData })
+            const data = await res.json()
+
+            if (!res.ok) {
+                setError(data.error || 'Something went wrong')
+                setPosting(false)
+                return
+            }
+
+            router.push('/')
+            router.refresh()
+        } catch {
+            setError('Network error — please try again')
+            setPosting(false)
         }
     }
 
@@ -217,7 +250,7 @@ export default function GeneratePage() {
                                 Generating...
                             </>
                         ) : (
-                            '✨ Generate caption'
+                            result !== null ? '🔄 Regenerate caption' : '✨ Generate caption'
                         )}
                     </button>
 
@@ -236,7 +269,7 @@ export default function GeneratePage() {
                         </div>
                     )}
 
-                    {result && (
+                    {result !== null && (
                         <div
                             style={{
                                 padding: '1.1rem',
@@ -246,26 +279,46 @@ export default function GeneratePage() {
                             }}
                         >
                             <p style={{ margin: 0, fontWeight: 700, color: '#4f46e5', fontSize: '0.85rem' }}>
-                                GENERATED CAPTION
+                                ✏️ YOUR CAPTION — feel free to edit
                             </p>
-                            <p style={{ margin: '0.5rem 0 1rem', color: '#1c1917', fontSize: '1.05rem', lineHeight: 1.4 }}>
-                                {result}
-                            </p>
+                            <textarea
+                                value={result}
+                                onChange={(e) => setResult(e.target.value)}
+                                rows={3}
+                                maxLength={500}
+                                style={{
+                                    display: 'block',
+                                    width: '100%',
+                                    margin: '0.6rem 0 1rem',
+                                    padding: '0.75rem',
+                                    border: '1.5px solid #c4b5fd',
+                                    borderRadius: '10px',
+                                    boxSizing: 'border-box',
+                                    fontFamily: 'inherit',
+                                    fontSize: '1.05rem',
+                                    lineHeight: 1.4,
+                                    resize: 'vertical',
+                                    outline: 'none',
+                                    background: 'white',
+                                    color: '#1c1917',
+                                }}
+                            />
                             <button
                                 type="button"
-                                onClick={() => router.push('/')}
+                                onClick={handlePost}
+                                disabled={posting || !result.trim()}
                                 style={{
-                                    padding: '0.55rem 1.1rem',
+                                    padding: '0.6rem 1.3rem',
                                     borderRadius: '8px',
                                     border: 'none',
-                                    background: '#4f46e5',
+                                    background: posting || !result.trim() ? '#c7c3f5' : '#4f46e5',
                                     color: 'white',
-                                    cursor: 'pointer',
-                                    fontWeight: 600,
-                                    fontSize: '0.85rem',
+                                    cursor: posting || !result.trim() ? 'not-allowed' : 'pointer',
+                                    fontWeight: 700,
+                                    fontSize: '0.9rem',
                                 }}
                             >
-                                View in gallery →
+                                {posting ? 'Posting…' : '✅ Post caption'}
                             </button>
                         </div>
                     )}
