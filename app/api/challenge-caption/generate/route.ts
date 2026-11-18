@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getOrCreateTodayChallenge } from '@/lib/dailyChallenge'
 import { NextResponse } from 'next/server'
+import sharp from 'sharp'
 
 // 'gemini-3.8-flash-lite' isn't a real text-generation model (only a -tts
 // variant exists) — that's what was 404ing. Confirmed via ListModels that
@@ -18,6 +19,50 @@ const CREATIVE_INSTRUCTION =
 
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+// ---------------------------------------------------------------------------
+// Challenge image: download + shrink ONCE, then reuse.
+//
+// Every visitor sees the same image all day, so there is no reason to
+// re-download a full-size photo from storage and push it to Gemini on every
+// click. We shrink it to at most 1024px (plenty for captioning) and keep the
+// result in memory, so repeat requests skip both the download and the resize.
+// ---------------------------------------------------------------------------
+type PreparedImage = { base64: string; mimeType: string }
+const imageCache = new Map<string, PreparedImage>()
+
+async function loadChallengeImage(url: string): Promise<PreparedImage | null> {
+    const cached = imageCache.get(url)
+    if (cached) return cached
+
+    const res = await fetch(url)
+    if (!res.ok) {
+        console.error('Failed to fetch challenge image:', url, res.status)
+        return null
+    }
+    const original = Buffer.from(await res.arrayBuffer())
+
+    let prepared: PreparedImage
+    try {
+        const resized = await sharp(original)
+            .rotate() // respect phone-photo orientation
+            .resize({ width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toBuffer()
+        prepared = { base64: resized.toString('base64'), mimeType: 'image/jpeg' }
+    } catch (err) {
+        // If resizing ever fails, fall back to sending the original untouched.
+        console.error('Challenge image resize failed, sending original:', err)
+        prepared = {
+            base64: original.toString('base64'),
+            mimeType: res.headers.get('content-type') || 'image/jpeg',
+        }
+    }
+
+    imageCache.clear() // only today's image is ever needed
+    imageCache.set(url, prepared)
+    return prepared
 }
 
 async function callGemini(model: string, promptText: string, base64Image: string, mimeType: string) {
@@ -85,6 +130,8 @@ function friendlyErrorMessage(status: number): string {
 // Generates a caption for review ONLY — does not save anything.
 // The user reviews/edits it client-side, then calls /api/challenge-caption/publish.
 export async function POST(request: Request) {
+    const t0 = Date.now()
+
     const supabase = await createClient()
     const {
         data: { user },
@@ -108,14 +155,20 @@ export async function POST(request: Request) {
             { status: 404 }
         )
     }
+    const tChallenge = Date.now()
 
-    // Already-published check (saves a wasted Gemini call if they've already entered)
-    const { data: existingEntry } = await supabase
-        .from('challenge_entries')
-        .select('id')
-        .eq('challenge_id', challenge.id)
-        .eq('user_id', user.id)
-        .maybeSingle()
+    // Run the "already entered?" check and the image load at the same time
+    // instead of one after the other.
+    const [{ data: existingEntry }, image] = await Promise.all([
+        supabase
+            .from('challenge_entries')
+            .select('id')
+            .eq('challenge_id', challenge.id)
+            .eq('user_id', user.id)
+            .maybeSingle(),
+        loadChallengeImage(challenge.image_url),
+    ])
+    const tPrep = Date.now()
 
     if (existingEntry) {
         return NextResponse.json(
@@ -124,19 +177,19 @@ export async function POST(request: Request) {
         )
     }
 
-    const imageResponse = await fetch(challenge.image_url)
-    if (!imageResponse.ok) {
-        console.error('Failed to fetch challenge image:', challenge.image_url, imageResponse.status)
+    if (!image) {
         return NextResponse.json({ error: "Couldn't load today's challenge image. Please try again." }, { status: 500 })
     }
-    const mimeType = imageResponse.headers.get('content-type') || 'image/jpeg'
-    const imageBuffer = await imageResponse.arrayBuffer()
-    const base64Image = Buffer.from(imageBuffer).toString('base64')
 
     const fullPrompt = `${userPrompt}\n\n${CREATIVE_INSTRUCTION}`
 
     try {
-        const captionText = await generateCaptionWithRetry(fullPrompt, base64Image, mimeType)
+        const captionText = await generateCaptionWithRetry(fullPrompt, image.base64, image.mimeType)
+        const tDone = Date.now()
+        // Shows up in your Vercel logs so you can see which step is slow.
+        console.log(
+            `[challenge-generate] auth+challenge ${tChallenge - t0}ms | entry-check+image ${tPrep - tChallenge}ms | gemini ${tDone - tPrep}ms | total ${tDone - t0}ms | image ${Math.round(image.base64.length / 1024)}KB`
+        )
         return NextResponse.json({ captionText })
     } catch (err: any) {
         console.error('Gemini challenge caption generation failed:', err)
