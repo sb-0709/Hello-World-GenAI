@@ -103,7 +103,27 @@ export default async function Home({
     const count = captions.length
     const totalPages = count ? Math.ceil(count / PAGE_SIZE) : 1
     const from = (currentPage - 1) * PAGE_SIZE
-    const pageCaptions = captions.slice(from, from + PAGE_SIZE)
+    const pagedRaw = captions.slice(from, from + PAGE_SIZE)
+
+    // Look up who posted each caption on this page (only these few authors, not everyone)
+    const pageAuthorIds = [...new Set(pagedRaw.map((c) => c.created_by).filter(Boolean))] as string[]
+    const { data: authorProfilesForPage } =
+        pageAuthorIds.length > 0
+            ? await supabase.from('profiles').select('id, first_name, last_name, avatar_url').in('id', pageAuthorIds)
+            : { data: [] as { id: string; first_name: string | null; last_name: string | null; avatar_url: string | null }[] }
+    const authorById = new Map((authorProfilesForPage || []).map((p) => [p.id, p]))
+
+    const pageCaptions = pagedRaw.map((c) => {
+        const author = c.created_by ? authorById.get(c.created_by) : undefined
+        return {
+            ...c,
+            authorId: (c.created_by as string | null) ?? null,
+            authorName: c.created_by
+                ? [author?.first_name, author?.last_name].filter(Boolean).join(' ') || 'Anonymous'
+                : null,
+            authorAvatarUrl: (author?.avatar_url as string | null) ?? null,
+        }
+    })
 
     // Today's Daily Challenge
     const challenge = await getOrCreateTodayChallenge(supabase)

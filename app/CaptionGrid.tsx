@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 type Caption = {
     id: number
@@ -10,6 +11,10 @@ type Caption = {
     image_url: string | null
     score: number
     userVote: 'up' | 'down' | null
+    // Who posted it (optional, so pages that don't look up authors still work)
+    authorId?: string | null
+    authorName?: string | null
+    authorAvatarUrl?: string | null
 }
 
 export default function CaptionGrid({
@@ -99,6 +104,57 @@ export default function CaptionGrid({
                                 background: 'var(--surface)',
                             }}
                         >
+                            {caption.authorId && caption.authorName && (
+                                <Link
+                                    href={`/u/${caption.authorId}`}
+                                    title={`View ${caption.authorName}'s profile and follow them`}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        padding: '0.6rem 0.9rem',
+                                        textDecoration: 'none',
+                                        color: 'var(--text)',
+                                        borderBottom: '1px solid var(--border-soft)',
+                                    }}
+                                >
+                                    {caption.authorAvatarUrl ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img
+                                            src={caption.authorAvatarUrl}
+                                            alt={caption.authorName}
+                                            style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <span
+                                            style={{
+                                                width: '24px',
+                                                height: '24px',
+                                                borderRadius: '50%',
+                                                background: '#f3e8ff',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontSize: '0.75rem',
+                                            }}
+                                        >
+                                            👤
+                                        </span>
+                                    )}
+                                    <span
+                                        style={{
+                                            fontSize: '0.85rem',
+                                            fontWeight: 700,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                        }}
+                                    >
+                                        {caption.authorName}
+                                    </span>
+                                </Link>
+                            )}
+
                             {caption.image_url && (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
