@@ -1,13 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import sharp from 'sharp'
 
-// Models to try, in order. If the first is overloaded, we fall back to the next.
+// Fail fast instead of hanging until Vercel's 300s limit: the whole request
+// gets at most ~50s, and each Gemini attempt at most 20s.
+export const maxDuration = 60
+const TOTAL_BUDGET_MS = 50_000
+const PER_ATTEMPT_MS = 20_000
+
+// Models to try, in order. If the first is slow or overloaded, we move on to the next.
 // 'gemini-flash-lite-latest' is Google's alias for the current lite model, so it
 // won't 404 as model versions roll forward.
 const MODELS = ['gemini-3.8-flash', 'gemini-flash-lite-latest']
 
-// How many times to retry a single model on a transient (503/429) error.
-const MAX_RETRIES_PER_MODEL = 2
+// Retries per model on a transient (503/429) error. Timeouts skip straight to the next model.
+const MAX_RETRIES_PER_MODEL = 1
 
 // Appended to whatever prompt the user wrote, so the model returns ONE plain caption
 // instead of a markdown list of "options".
@@ -42,13 +49,37 @@ function cleanCaption(raw: string): string {
     return text || raw.trim()
 }
 
-async function callGemini(model: string, promptText: string, base64Image: string, mimeType: string) {
+// Shrink big phone photos before sending: much faster to upload and for Gemini to read.
+async function prepareImage(file: File): Promise<{ base64: string; mimeType: string }> {
+    const original = Buffer.from(await file.arrayBuffer())
+    try {
+        const resized = await sharp(original)
+            .rotate()
+            .resize({ width: 1024, height: 1024, fit: 'inside', withoutEnlargement: true })
+            .jpeg({ quality: 80 })
+            .toBuffer()
+        return { base64: resized.toString('base64'), mimeType: 'image/jpeg' }
+    } catch (err) {
+        console.error('Image resize failed, sending original:', err)
+        return { base64: original.toString('base64'), mimeType: file.type || 'image/jpeg' }
+    }
+}
+
+async function callGemini(
+    model: string,
+    promptText: string,
+    base64Image: string,
+    mimeType: string,
+    timeoutMs: number
+) {
     return fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'x-goog-api-key': process.env.GEMINI_API_KEY!,
         },
+        // Without this, a stalled Gemini call can hang until the platform kills the function.
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
             contents: [
                 {
@@ -67,16 +98,30 @@ async function callGemini(model: string, promptText: string, base64Image: string
     })
 }
 
-// Tries each model in MODELS, retrying transient errors (503 overloaded, 429 rate limited)
-// with a short backoff before moving to the next model. Returns the caption text on
-// success, or throws a typed error the route handler turns into a friendly message.
+// Tries each model in MODELS. Transient errors (503/429) are retried once with a short
+// backoff; a timeout moves straight on to the next model. Everything is bounded by
+// TOTAL_BUDGET_MS so the user always gets an answer or a clear error.
 async function generateCaptionWithRetry(promptText: string, base64Image: string, mimeType: string) {
+    const start = Date.now()
     let lastStatus = 500
     let lastDetail = 'Unknown error'
 
     for (const model of MODELS) {
         for (let attempt = 0; attempt <= MAX_RETRIES_PER_MODEL; attempt++) {
-            const response = await callGemini(model, promptText, base64Image, mimeType)
+            const remaining = TOTAL_BUDGET_MS - (Date.now() - start)
+            if (remaining < 3000) throw { status: 504, detail: 'Out of time budget' }
+
+            let response: Response
+            try {
+                response = await callGemini(model, promptText, base64Image, mimeType, Math.min(PER_ATTEMPT_MS, remaining))
+            } catch (err: any) {
+                // Timeout or network failure: don't wait on this model again, try the next one.
+                console.error(`Gemini ${model} attempt ${attempt + 1} failed:`, err?.name || err)
+                lastStatus = 504
+                lastDetail = `${model} timed out or was unreachable`
+                break
+            }
+
             const data = await response.json()
 
             if (response.ok) {
@@ -99,12 +144,11 @@ async function generateCaptionWithRetry(promptText: string, base64Image: string,
                 throw { status: lastStatus, detail: lastDetail }
             }
 
-            const isLastAttemptForModel = attempt === MAX_RETRIES_PER_MODEL
-            if (!isLastAttemptForModel) {
-                await sleep(1000 * (attempt + 1)) // 1s, then 2s
+            if (attempt < MAX_RETRIES_PER_MODEL) {
+                await sleep(1000)
             }
         }
-        // Exhausted retries on this model — fall through to the next model, if any.
+        // Exhausted this model — fall through to the next one, if any.
     }
 
     throw { status: lastStatus, detail: lastDetail }
@@ -113,17 +157,22 @@ async function generateCaptionWithRetry(promptText: string, base64Image: string,
 // Maps an internal error into a message that's safe and useful to show a user.
 function friendlyErrorMessage(status: number): string {
     if (status === 503) {
-        return "Our caption generator is a little busy right now — please try again in a few seconds."
+        return 'Our caption generator is a little busy right now — please try again in a few seconds.'
+    }
+    if (status === 504) {
+        return 'The caption generator is taking too long right now — please try again.'
     }
     if (status === 429) {
         return "You're generating captions a bit quickly — give it a moment and try again."
     }
-    return "Something went wrong generating your caption. Please try again."
+    return 'Something went wrong generating your caption. Please try again.'
 }
 
 // Generates ONE caption for the user to review and edit. Saves nothing —
 // the page calls /api/generate-caption/publish once the user is happy with it.
 export async function POST(request: Request) {
+    const t0 = Date.now()
+
     const supabase = await createClient()
     const {
         data: { user },
@@ -141,13 +190,16 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'No image provided' }, { status: 400 })
     }
 
-    const imageBuffer = await file.arrayBuffer()
-    const base64Image = Buffer.from(imageBuffer).toString('base64')
+    const image = await prepareImage(file)
+    const tPrep = Date.now()
 
     const fullPrompt = `${userPrompt}\n\n${SINGLE_CAPTION_INSTRUCTION}`
 
     try {
-        const raw = await generateCaptionWithRetry(fullPrompt, base64Image, file.type)
+        const raw = await generateCaptionWithRetry(fullPrompt, image.base64, image.mimeType)
+        console.log(
+            `[generate-caption] prep ${tPrep - t0}ms | gemini ${Date.now() - tPrep}ms | image ${Math.round(image.base64.length / 1024)}KB`
+        )
         return NextResponse.json({ captionText: cleanCaption(raw) })
     } catch (err: any) {
         // Log the real error for debugging; never send it to the client.
